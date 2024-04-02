@@ -15,7 +15,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strictPropertyInitialization": false
   },
   "include": ["src"]
 }

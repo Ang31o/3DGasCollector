@@ -4,11 +4,11 @@ import { Engine } from '../../engine/Engine';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
 import { Car } from '../Car';
-import LinearSpline from '../../engine/helpers/LinearSpline';
+import LinearSpline from '../../engine/utilities/LinearSpline';
 import { Events } from '../../events';
 import eventService from '../../engine/utilities/eventService';
 
-export class Exhaust implements GameEntity {
+export class Exhaust extends GameEntity {
   private count: number = 2;
   private geometry!: THREE.BufferGeometry<THREE.NormalBufferAttributes>;
   private material!: THREE.ShaderMaterial;
@@ -23,6 +23,7 @@ export class Exhaust implements GameEntity {
   private exhaustEmitPoint: THREE.Object3D<THREE.Object3DEventMap> | undefined;
 
   constructor(private engine: Engine, private car: Car) {
+    super();
     this.getExhaustEmitPointModel();
     this.setGeometryAndMaterial();
     this.emitParticles();

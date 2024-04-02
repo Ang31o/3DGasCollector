@@ -7,14 +7,15 @@ import { GameEntity } from './GameEntity';
 import eventService from './utilities/eventService';
 import { Events } from '../events';
 
-export class Camera implements GameEntity {
+export class Camera extends GameEntity {
   public csm!: CSM;
+  public declare instance: THREE.PerspectiveCamera;
   private gui!: GUI;
-  public instance!: THREE.PerspectiveCamera;
-  private controls!: OrbitControls;
+  private orbitControls!: OrbitControls;
   private followTarget!: THREE.Object3D<THREE.Object3DEventMap>;
 
   constructor(private engine: Engine) {
+    super();
     this.initCamera();
     this.addCascadeShadowMaps();
     this.initControls();
@@ -43,27 +44,26 @@ export class Camera implements GameEntity {
       lightDirection: new THREE.Vector3(-1, -1, 0),
       camera: this.instance,
       parent: this.engine.scene,
-      lightIntensity: 1,
+      lightIntensity: 0.5,
     });
   }
 
   initGui(): void {
-    this.gui = new GUI();
-    this.gui
-      .add(this.controls, 'enabled')
+    this.engine.debug.gui
+      .add(this.orbitControls, 'enabled')
       .name('Enable Orbit Controls')
       .onChange((isEnabled: boolean) => {
         // Focus on car with orbit controls
         localStorage.setItem('orbitControlsEnabled', isEnabled.toString());
-        this.controls.target = this.followTarget.parent
+        this.orbitControls.target = this.followTarget.parent
           ?.position as THREE.Vector3;
       });
   }
 
   private initControls() {
-    this.controls = new OrbitControls(this.instance, this.engine.canvas);
-    this.controls.update();
-    this.controls.enabled =
+    this.orbitControls = new OrbitControls(this.instance, this.engine.canvas);
+    this.orbitControls.update();
+    this.orbitControls.enabled =
       localStorage.getItem('orbitControlsEnabled') === 'true';
   }
 
@@ -85,8 +85,8 @@ export class Camera implements GameEntity {
 
   update() {
     // OrbitControls i bilo koje drugo pomeranje camere NE IDU ZAJEDNO!!!
-    if (this.controls.enabled) {
-      this.controls.update();
+    if (this.orbitControls.enabled) {
+      this.orbitControls.update();
     } else if (this.followTarget) {
       this.instance.position.lerp(
         this.followTarget.getWorldPosition(new THREE.Vector3()),

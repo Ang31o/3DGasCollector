@@ -3,30 +3,64 @@ import CannonDebugger from 'cannon-es-debugger';
 import { GameEntity } from './GameEntity';
 import { Engine } from './Engine';
 import { Constants } from '../constants';
+import eventService from './utilities/eventService';
+import { Events } from '../events';
 
-export class Physics implements GameEntity {
-  public instance!: CANNON.World;
+export class Physics extends GameEntity {
+  public world: CANNON.World;
   public debugRenderer: any;
+  public isDebugOn: boolean = false;
+  public bodiesForRemoval: CANNON.Body[] = [];
 
   constructor(private engine: Engine) {
+    super();
     this.initWorld();
+    this.initGui();
     this.initDebugRenderer();
+    this.addEventListeners();
   }
 
   initWorld(): void {
-    this.instance = new CANNON.World();
-    this.instance.gravity.set(0, Constants.GRAVITY, 0);
-    this.instance.allowSleep = false;
-    this.instance.broadphase = new CANNON.SAPBroadphase(this.instance);
-    this.instance.defaultMaterial.friction = 0;
+    this.world = new CANNON.World();
+    this.world.gravity.set(0, Constants.GRAVITY, 0);
+    this.world.allowSleep = false;
+    this.world.broadphase = new CANNON.SAPBroadphase(this.world);
+    // this.world.defaultMaterial.friction = 0;
   }
 
   initDebugRenderer(): void {
-    this.debugRenderer = new CannonDebugger(this.engine.scene, this.instance);
+    if (localStorage.getItem('debug') === 'true') {
+      this.debugRenderer = new CannonDebugger(this.engine.scene, this.world);
+    }
+  }
+
+  initGui(): void {
+    this.isDebugOn = localStorage.getItem('debug') === 'true';
+    this.engine.debug.gui
+      .add(this, 'isDebugOn')
+      .name('Enable Physics Debug')
+      .onChange((isEnabled: boolean) => {
+        // Focus on car with orbit controls
+        localStorage.setItem('debug', isEnabled.toString());
+      });
+  }
+
+  onRemoveBody(body: CANNON.Body): void {
+    this.bodiesForRemoval.push(body);
+  }
+
+  addEventListeners(): void {
+    eventService.on(Events.REMOVE_BODY, this.onRemoveBody, this);
   }
 
   update() {
-    this.instance.step(1 / 60, this.engine.time.deltaTime, 3);
+    if (this.bodiesForRemoval.length > 0) {
+      console.log(this.bodiesForRemoval);
+
+      this.bodiesForRemoval.forEach((body) => this.world.removeBody(body));
+      this.bodiesForRemoval = [];
+    }
+    this.world.step(1 / 60, this.engine.time.deltaTime, 3);
     this.debugRenderer?.update();
   }
 }

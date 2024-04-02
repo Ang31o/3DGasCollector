@@ -5,11 +5,11 @@ import { GameEntity } from '../engine/GameEntity';
 import { Exhaust } from './exhaust/Exhaust';
 import eventService from '../engine/utilities/eventService';
 import { Events } from '../events';
-import { CarLight } from './CarLight';
+import { RectLight } from './RectLight';
+import { Constants } from '../constants';
+import { GameState } from './state/GameState';
 
-export class Car extends THREE.EventDispatcher implements GameEntity {
-  public instance!: THREE.Object3D;
-  public body!: CANNON.Body;
+export class Car extends GameEntity {
   private vehicle!: CANNON.RaycastVehicle;
   private wheels!: THREE.Object3D<THREE.Object3DEventMap>[];
   private exhaust!: Exhaust;
@@ -29,13 +29,31 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
     'ArrowRight',
   ];
   private pressedKeys: string[] = [];
+  private lightBrakeLeft: RectLight;
+  private lightBrakeRight: RectLight;
+  private lightFrontLeft: RectLight;
+  private lightFrontRight: RectLight;
+  public wheelMaterial: CANNON.Material;
 
   constructor(private engine: Engine) {
     super();
     this.initObject3D();
     this.initPhysics();
-    this.addKeyboardControls();
+    // this.createDemoCannonBox();
+    this.addEventListeners();
+    // window.c = this;
+    // window.THREE = THREE;
+    // window.CANNON = CANNON;
   }
+
+  // createDemoCannonBox() {
+  //   this.wheelMaterial = new CANNON.Material('wheel');
+  //   const shape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 2));
+  //   this.box = new CANNON.Body({ mass: 10, material: new CANNON.Material() });
+  //   this.box.addShape(shape);
+  //   this.box.position.set(-5, 12, -1);
+  //   this.engine.physics.world.addBody(this.box);
+  // }
 
   initObject3D(): void {
     this.instance = this.engine.resources.getItem('Car').scene;
@@ -69,25 +87,28 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
       width: 0.5,
       height: 0.09,
       displayHelper: true,
+      visible: false,
     };
-    new CarLight(this, 'lightBrakeLeft', brakeLightProps, true, Events.BRAKE);
-    new CarLight(this, 'lightBrakeRight', brakeLightProps, true, Events.BRAKE);
-    const lightFrontLeft = new CarLight(
+    this.lightBrakeLeft = new RectLight(
+      this,
+      'lightBrakeLeft',
+      brakeLightProps
+    );
+    this.lightBrakeRight = new RectLight(
+      this,
+      'lightBrakeRight',
+      brakeLightProps
+    );
+    this.lightFrontLeft = new RectLight(
       this,
       'lightFrontLeft',
-      frontLightProps,
-      false
+      frontLightProps
     );
-    const lightFrontRight = new CarLight(
+    this.lightFrontRight = new RectLight(
       this,
       'lightFrontRight',
-      frontLightProps,
-      false
+      frontLightProps
     );
-    const quaternion = new THREE.Quaternion();
-    quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
-    lightFrontLeft.instance.quaternion.copy(quaternion);
-    lightFrontRight.instance.quaternion.copy(quaternion);
   }
 
   initPhysics(): void {
@@ -100,10 +121,16 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
     const chassisShape = new CANNON.Box(
       new CANNON.Vec3(carWidth, carHeight, carLength)
     );
-    this.body = new CANNON.Body({ mass: 150 });
+    this.body = new CANNON.Body({
+      mass: 170,
+    });
     this.body.addShape(chassisShape);
-    this.body.position.set(0, 4, 0);
-    this.engine.physics.instance.addBody(this.body);
+    this.body.position.set(
+      Constants.STARTING_POINT.x,
+      Constants.STARTING_POINT.y,
+      Constants.STARTING_POINT.z
+    );
+    this.engine.physics.world.addBody(this.body);
 
     // CREATE VEHICLE
     this.vehicle = new CANNON.RaycastVehicle({
@@ -118,10 +145,10 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
       directionLocal: new CANNON.Vec3(0, -1, 0), // Direction of down
       suspensionStiffness: 30, // How soft the suspension is
       suspensionRestLength: 0.7, // Suspension height
-      maxSuspensionTravel: 0.3, // maxSuspensionTravel can never be more than suspensionRestLength
-      frictionSlip: 1.4,
-      dampingRelaxation: 2.3,
-      dampingCompression: 4.4,
+      maxSuspensionTravel: 0.6, // maxSuspensionTravel can never be more than suspensionRestLength
+      frictionSlip: 2,
+      dampingRelaxation: 8,
+      dampingCompression: 10,
       maxSuspensionForce: 100000,
       axleLocal: new CANNON.Vec3(1, 0, 0), // Axle on this car goes on the X axis
       chassisConnectionPointLocal: new CANNON.Vec3(0, 0, 0), // Dummy value, will be set for each of the wheel we apply
@@ -139,10 +166,21 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
     wheelOptions.chassisConnectionPointLocal.set(carWidth, 0, -1.2); // Bottom left wheel
     this.vehicle.addWheel(wheelOptions);
 
-    this.vehicle.addToWorld(this.engine.physics.instance);
+    this.vehicle.addToWorld(this.engine.physics.world);
+
+    // const carGui = this.engine.debug.gui.addFolder('Car');
+    // for (const key in wheelOptions) {
+    //   if (typeof wheelOptions[key] === 'number') {
+    //     carGui
+    //       .add(wheelOptions, `${key}`, 0, wheelOptions[key] * 10)
+    //       .onChange((value) =>
+    //         this.vehicle.wheelInfos.forEach((wheel) => (wheel[key] = value))
+    //       );
+    //   }
+    // }
 
     const wheelBodies = [] as CANNON.Body[];
-    const wheelMaterial = new CANNON.Material('wheel');
+    this.wheelMaterial = new CANNON.Material('wheelMaterial');
     this.vehicle.wheelInfos.forEach((wheel) => {
       const cylinderShape = new CANNON.Cylinder(
         wheel.radius,
@@ -152,7 +190,7 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
       );
       const wheelBody = new CANNON.Body({
         mass: 1,
-        material: wheelMaterial,
+        material: this.wheelMaterial,
         type: CANNON.Body.KINEMATIC,
         collisionFilterGroup: 0, // turn off collisions
       });
@@ -162,11 +200,11 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
         new CANNON.Quaternion().setFromEuler(0, 0, Math.PI / 2)
       );
       wheelBodies.push(wheelBody);
-      this.engine.physics.instance.addBody(wheelBody);
+      this.engine.physics.world.addBody(wheelBody);
     });
 
     // UPDATE WHEELS
-    this.engine.physics.instance.addEventListener('postStep', () => {
+    this.engine.physics.world.addEventListener('postStep', () => {
       this.vehicle.wheelInfos.forEach((wheel, wheelIndex) => {
         this.vehicle.updateWheelTransform(wheelIndex);
         const transform = wheel.worldTransform;
@@ -205,11 +243,18 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
   }
 
   onBreak(brakeForce: number): void {
-    eventService.emit(Events.BRAKE, brakeForce !== 0);
+    this.lightBrakeLeft.toggleLight(brakeForce !== 0);
+    this.lightBrakeRight.toggleLight(brakeForce !== 0);
     this.vehicle.setBrake(brakeForce, 0);
     this.vehicle.setBrake(brakeForce, 1);
     this.vehicle.setBrake(brakeForce, 2);
     this.vehicle.setBrake(brakeForce, 3);
+  }
+
+  stopVehicle() {
+    this.vehicle.chassisBody.velocity.copy(
+      this.vehicle.chassisBody.initVelocity
+    );
   }
 
   updateMovement(): void {
@@ -223,7 +268,6 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
     }
     if (this.pressedKeys.indexOf('a') > -1) {
       this.onSteer(1);
-      console.log('steer');
     }
     if (this.pressedKeys.indexOf('d') > -1) {
       this.onSteer(-1);
@@ -248,10 +292,14 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
   addKeyboardControls(): void {
     document.addEventListener('keydown', (event) => {
       if (event.key === 'r') {
-        this.body.quaternion.setFromAxisAngle(
-          new CANNON.Vec3(0, 1, 0),
-          Math.PI
-        );
+        this.body.position.copy(GameState.lastCheckpoint.p);
+        this.body.quaternion.copy(GameState.lastCheckpoint.q);
+        this.stopVehicle();
+        return;
+      }
+      if (event.key === 'l') {
+        this.lightFrontLeft.toggleLight(!this.lightFrontLeft.isLightOn);
+        this.lightFrontRight.toggleLight(!this.lightFrontRight.isLightOn);
         return;
       }
       if (
@@ -269,6 +317,25 @@ export class Car extends THREE.EventDispatcher implements GameEntity {
         this.updateMovementStop(event.key);
       }
     });
+  }
+
+  onCheckpointPassed(): void {
+    GameState.checkpointPassed(
+      this.body.position.clone(),
+      this.body.quaternion.clone()
+    );
+    document.getElementsByClassName(
+      'score-container'
+    )[0].textContent = `Score: ${GameState.score}`;
+  }
+
+  onStartRace(): void {
+    this.addKeyboardControls();
+  }
+
+  addEventListeners(): void {
+    eventService.on(Events.CHECKPOINT_PASSED, this.onCheckpointPassed, this);
+    eventService.on(Events.START_RACE, this.onStartRace, this);
   }
 
   update(delta: number): void {
