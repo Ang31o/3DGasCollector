@@ -33,7 +33,7 @@ export class Car extends GameEntity {
   private lightBrakeRight: RectLight;
   private lightFrontLeft: RectLight;
   private lightFrontRight: RectLight;
-  public wheelMaterial: CANNON.Material;
+  private surfaceDetectionBody: CANNON.Body;
 
   constructor(private engine: Engine) {
     super();
@@ -131,6 +131,16 @@ export class Car extends GameEntity {
       Constants.STARTING_POINT.z
     );
     this.engine.physics.world.addBody(this.body);
+    // SurfaceDetectionBody will be used as a dynamic body type which will detect the map's surface between road and grass
+    this.surfaceDetectionBody = new CANNON.Body({
+      mass: 1,
+      collisionResponse: false,
+    });
+    const surfaceDetectionShape = new CANNON.Box(
+      new CANNON.Vec3(carWidth, carHeight + 1, carLength)
+    );
+    this.surfaceDetectionBody.addShape(surfaceDetectionShape);
+    this.engine.physics.world.addBody(this.surfaceDetectionBody);
 
     // CREATE VEHICLE
     this.vehicle = new CANNON.RaycastVehicle({
@@ -180,7 +190,6 @@ export class Car extends GameEntity {
     // }
 
     const wheelBodies = [] as CANNON.Body[];
-    this.wheelMaterial = new CANNON.Material('wheelMaterial');
     this.vehicle.wheelInfos.forEach((wheel) => {
       const cylinderShape = new CANNON.Cylinder(
         wheel.radius,
@@ -190,7 +199,7 @@ export class Car extends GameEntity {
       );
       const wheelBody = new CANNON.Body({
         mass: 1,
-        material: this.wheelMaterial,
+        material: new CANNON.Material('wheelMaterial'),
         type: CANNON.Body.KINEMATIC,
         collisionFilterGroup: 0, // turn off collisions
       });
@@ -333,9 +342,14 @@ export class Car extends GameEntity {
     this.addKeyboardControls();
   }
 
+  onUpdateSpeed(surfaceMaterial: string): void {
+    this.maxForceForward = surfaceMaterial === 'grassMaterial' ? 100 : 1000;
+  }
+
   addEventListeners(): void {
     eventService.on(Events.CHECKPOINT_PASSED, this.onCheckpointPassed, this);
     eventService.on(Events.START_RACE, this.onStartRace, this);
+    eventService.on(Events.UPDATE_SPEED, this.onUpdateSpeed, this);
   }
 
   update(delta: number): void {
@@ -350,6 +364,12 @@ export class Car extends GameEntity {
       this.body.quaternion.y,
       this.body.quaternion.z,
       this.body.quaternion.w
+    );
+    // SurfaceDetectionBody will just follow the car body and return the velocity values to initial
+    this.surfaceDetectionBody.position.copy(this.body.position);
+    this.surfaceDetectionBody.quaternion.copy(this.body.quaternion);
+    this.surfaceDetectionBody.velocity.copy(
+      this.surfaceDetectionBody.initVelocity
     );
     this.exhaust.update(delta);
   }

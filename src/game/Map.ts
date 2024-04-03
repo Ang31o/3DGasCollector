@@ -14,7 +14,7 @@ export class Map extends GameEntity {
   private sun!: THREE.DirectionalLight;
   private lightStartLeft: RectLight;
   private lightStartRight: RectLight;
-  private roadMaterial: CANNON.Material;
+  private currentSurfaceMaterial: string | undefined = 'roadMaterial';
 
   constructor(private engine: Engine) {
     super();
@@ -23,13 +23,17 @@ export class Map extends GameEntity {
     this.addLights();
     this.initPhysics();
     this.addEventListeners();
+    // window.m = this;
   }
 
   initObject3D(): void {
     this.instance = this.engine.resources.getItem('Map').scene;
     // Make map parts receive a shadow
     this.instance.traverse((child) => {
-      if (child.type === 'Mesh') child.receiveShadow = true;
+      if (child.type === 'Mesh') {
+        child.receiveShadow = true;
+        child.castShadow = true;
+      }
     });
     this.engine.scene.add(this.instance);
   }
@@ -73,7 +77,6 @@ export class Map extends GameEntity {
     // body.addShape(shape);
     // this.engine.physics.world.addBody(body);
     this.checkpoints = [];
-    this.roadMaterial = new CANNON.Material('roadMaterial');
     this.instance.children.forEach((child: THREE.Object3D) => {
       if (child.name.includes('collider')) this.createRoadCollider(child);
     });
@@ -96,8 +99,10 @@ export class Map extends GameEntity {
     // Do not render the 3D cube model
     collider.visible = false;
     const body = new CANNON.Body({
-      mass: 0,
-      material: this.roadMaterial,
+      type: CANNON.Body.STATIC,
+      material: collider.name.includes('Grass')
+        ? new CANNON.Material('grassMaterial')
+        : new CANNON.Material('roadMaterial'),
     });
     body.addShape(shape);
     body.position.set(
@@ -111,10 +116,10 @@ export class Map extends GameEntity {
       collider.quaternion.z,
       collider.quaternion.w
     );
-    // body.addEventListener(
-    //   CANNON.Body.COLLIDE_EVENT_NAME,
-    //   this.onCollide.bind(this)
-    // );
+    body.addEventListener(
+      CANNON.Body.COLLIDE_EVENT_NAME,
+      this.onCollide.bind(this)
+    );
     this.engine.physics.world.addBody(body);
   }
 
@@ -131,30 +136,24 @@ export class Map extends GameEntity {
   onStartRace(): void {
     this.lightStartLeft.changeLightColor(0x00ff00);
     this.lightStartRight.changeLightColor(0x00ff00);
-    // this.initContactWheelsRoad();
   }
-
-  // initContactWheelsRoad(): void {
-  //   const wheel_ground = new CANNON.ContactMaterial(
-  //     this.engine.experience.car.wheelMaterial,
-  //     this.roadMaterial,
-  //     {
-  //       friction: 0.3,
-  //       restitution: 100,
-  //       contactEquationStiffness: 1000,
-  //     }
-  //   );
-  //   this.engine.physics.world.addContactMaterial(wheel_ground);
-  // }
 
   onCheckpointPassed(): void {
     this.lightStartLeft.toggleLight(false);
     this.lightStartRight.toggleLight(false);
   }
 
-  // onCollide(): void {
-  //   eventService.emit(Events.UPDATE_SPEED);
-  // }
+  onCollide(event: {
+    body: CANNON.Body;
+    contact: CANNON.ContactEquation;
+    target: CANNON.Body;
+    type: string;
+  }): void {
+    if (this.currentSurfaceMaterial !== event.target.material?.name) {
+      this.currentSurfaceMaterial = event.target.material?.name;
+      eventService.emit(Events.UPDATE_SPEED, this.currentSurfaceMaterial);
+    }
+  }
 
   addEventListeners(): void {
     eventService.on(Events.REMOVE_INSTANCE, this.onRemoveInstance, this);
