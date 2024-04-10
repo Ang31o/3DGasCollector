@@ -10,14 +10,12 @@ import { GameState } from './state/GameState';
 import { StartCountdown } from './StartCountdown';
 import eventService from '../engine/utilities/eventService';
 import { Events } from '../events';
-import { formatTime } from '../engine/utilities/Number-Utils';
 
 export class Game implements Experience {
   resources: Resource[] = resources;
   public car: Car;
   public map: Map;
   public startCountdown?: StartCountdown;
-  raceCounterInterval: number;
 
   constructor(private engine: Engine) {}
 
@@ -90,30 +88,13 @@ export class Game implements Experience {
     }
   }
 
-  onStartRace(): void {
-    let time = 0;
-    const timeContainer = document.querySelector('#time-container');
-    this.raceCounterInterval = setInterval(() => {
-      if (timeContainer) {
-        timeContainer.innerHTML = `Race time:\n${formatTime(time)}`;
-        time++;
-      }
-    }, 1000);
-  }
-
-  onFinishRace(): void {
-    clearInterval(this.raceCounterInterval);
-  }
-
   addEventListeners(): void {
     eventService.on(Events.REMOVE_INSTANCE, this.onRemoveInstance, this);
     eventService.on(Events.START_GAME, this.onStartGame, this);
-    eventService.on(Events.RACE_START, this.onStartRace, this);
-    eventService.on(Events.RACE_FINISH, this.onFinishRace, this);
   }
 
   update(delta: number) {
-    this.map.update(delta);
+    this.map.update();
     this.car.update(delta);
     this.startCountdown?.update();
   }

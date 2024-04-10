@@ -14,19 +14,26 @@ export class GasCheckpoint extends BaseEntity {
     super();
     this.gas = instance.userData.gas || 15;
     this.initPhysics();
+    this.cloneMaterial();
     this.addEventListeners();
   }
 
+  cloneMaterial(): void {
+    // Must clone a material so we can fade-out just this collected checkpoint box and not all others,
+    // bc they are sharing the same material
+    this.instance.material = (this.instance.material as THREE.Material).clone();
+    this.instance.material.transparent = true;
+  }
+
+  createShape(): CANNON.Box {
+    const shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
+    return shape;
+  }
+
   initPhysics(): void {
-    const shape = new CANNON.Box(
-      new CANNON.Vec3(
-        this.instance.scale.x,
-        this.instance.scale.y,
-        this.instance.scale.z
-      )
-    );
+    const shape = this.createShape();
     this.body = new CANNON.Body({
-      mass: 0,
+      type: CANNON.Body.STATIC,
       collisionResponse: false, // Don't slow down the car when collided
       material: new CANNON.Material('checkpointMaterial'),
     });
@@ -36,22 +43,16 @@ export class GasCheckpoint extends BaseEntity {
       this.instance.position.y,
       this.instance.position.z
     );
+    this.body.sleep();
+
     this.engine.physics.world.addBody(this.body);
   }
 
   onCollide(): void {
     if (!this.isCollected) {
-      eventService.emit(Events.REMOVE_BODY, this.body);
-      eventService.emit(Events.CHECKPOINT_PASSED, this.gas);
       this.isCollected = true;
-      // Must clone a material so we can fade-out just this collected checkpoint box and not all others,
-      // bc they are sharing the same material
-      this.instance.material = (
-        this.instance.material as THREE.Material
-      ).clone();
-      this.instance.material.transparent = true;
-
       setTimeout(() => this.destroy(), 2000);
+      eventService.emit(Events.CHECKPOINT_PASSED, this.gas);
     }
   }
 
@@ -62,15 +63,15 @@ export class GasCheckpoint extends BaseEntity {
     );
   }
 
+  removeEventListeners(): void {
+    this.body.removeEventListener(
+      CANNON.Body.COLLIDE_EVENT_NAME,
+      this.onCollide.bind(this)
+    );
+  }
+
   destroy(): void {
-    this.instance.parent?.remove(this.instance);
-    this.instance.geometry.dispose();
-    for (const key in this.instance.material) {
-      const value = this.instance.material[key];
-      if (value && typeof value.dispose === 'function') {
-        value.dispose();
-      }
-    }
+    super.destroy();
     eventService.emit(Events.REMOVE_INSTANCE, this);
   }
 

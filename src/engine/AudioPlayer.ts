@@ -36,7 +36,7 @@ export class AudioPlayer {
     this.carEngine = new THREE.Audio(this.listener);
     this.carEngine.setBuffer(this.engine.resources.getItem('engine'));
     this.carEngine.setLoop(true);
-    this.fadeInSound(this.carEngine, 0.3);
+    this.fadeInSound(this.carEngine, 0.2);
     if (GameState.isSoundOn) this.carEngine.play();
   }
 

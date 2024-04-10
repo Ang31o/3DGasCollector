@@ -27,7 +27,7 @@ export class Map extends BaseEntity {
     this.addLights();
     this.initPhysics();
     this.addEventListeners();
-    // window.m = this;
+    window.m = this;
   }
 
   initObject3D(): void {
@@ -57,10 +57,11 @@ export class Map extends BaseEntity {
   addLights(): void {
     const startLightProps = {
       color: 0xff0000,
-      intensity: 50,
+      intensity: 10,
       width: 2,
       height: 1,
       displayHelper: true,
+      visible: true,
     };
     this.lightStartLeft = new RectLight(
       this,

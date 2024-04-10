@@ -84,7 +84,7 @@ export class Car extends BaseEntity {
     };
     const brakeLightProps = {
       color: 0xff0000,
-      intensity: 50,
+      intensity: 1,
       width: 0.5,
       height: 0.09,
       displayHelper: true,

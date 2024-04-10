@@ -1,12 +1,16 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import eventService from './utilities/eventService';
+import { Events } from '../events';
 export class BaseEntity {
   public instance: THREE.Mesh | THREE.Group | THREE.PerspectiveCamera;
   public body: CANNON.Body;
   constructor() {}
 
   update?(delta: number): void;
-  resize?(): void;
+  resize(): void {}
+  removeEventListeners(): void {}
+
   destroy(): void {
     this.instance?.parent?.remove(this.instance);
     if (this.instance instanceof THREE.Mesh) {
@@ -20,14 +24,27 @@ export class BaseEntity {
         }
       });
     }
-    this.body?.shapes.forEach((shape) => this.body?.removeShape(shape));
+    if (this.body) {
+      eventService.emit(Events.REMOVE_BODY, this.body);
+    }
+    this.removeEventListeners();
   }
 
   destroyMaterialOfMesh(instance: THREE.Mesh): void {
     if (Array.isArray(instance.material)) {
-      instance.material.forEach((child) => child.dispose());
+      instance.material.forEach((child) => {
+        child.dispose();
+        this.destroyTexture(child);
+      });
     } else {
       instance.material.dispose();
+      this.destroyTexture(instance.material);
+    }
+  }
+
+  destroyTexture(material: THREE.Material): void {
+    if (material instanceof THREE.MeshMatcapMaterial) {
+      material.matcap?.dispose();
     }
   }
 }

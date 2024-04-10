@@ -3,6 +3,7 @@ import githubLogo from '../../../assets/github.png';
 import { GameState } from '../../game/state/GameState';
 import { Events } from '../../events';
 import eventService from '../utilities/eventService';
+import { formatTime } from '../utilities/Number-Utils';
 
 export type InfoConfig = {
   twitter?: string;
@@ -13,6 +14,9 @@ export type InfoConfig = {
 };
 
 export class InfoUI {
+  private raceCounterInterval: number;
+  private timeContainer: HTMLDivElement;
+  private scoreContainer: HTMLDivElement;
   constructor(config: InfoConfig = {}) {
     this.init(config);
     this.addGasProgress();
@@ -45,17 +49,17 @@ export class InfoUI {
     `
     );
 
-    const scoreContainer = document.createElement('div');
-    scoreContainer.classList.add('score-container');
-    scoreContainer.insertAdjacentHTML(
+    this.scoreContainer = document.createElement('div');
+    this.scoreContainer.classList.add('score-container');
+    this.scoreContainer.insertAdjacentHTML(
       'beforeend',
       `Gas collected: ${GameState.score} / ${GameState.maxScore}`
     );
 
-    const timeContainer = document.createElement('div');
-    timeContainer.classList.add('container');
-    timeContainer.id = 'time-container';
-    timeContainer.insertAdjacentHTML('beforeend', `Race time:\n00:00:00`);
+    this.timeContainer = document.createElement('div');
+    this.timeContainer.classList.add('container');
+    this.timeContainer.id = 'time-container';
+    this.timeContainer.insertAdjacentHTML('beforeend', `Race time:\n00:00:00`);
     const controlsContainer = document.createElement('div');
     controlsContainer.className = 'controls-container';
     controlsContainer.insertAdjacentHTML(
@@ -65,9 +69,9 @@ export class InfoUI {
 
     document.body.append(
       container,
-      scoreContainer,
-      timeContainer,
-      controlsContainer
+      this.timeContainer,
+      controlsContainer,
+      this.scoreContainer
     );
   }
 
@@ -142,9 +146,26 @@ export class InfoUI {
     this.onGas();
   }
 
+  onStartRace(): void {
+    let time = 0;
+    this.raceCounterInterval = setInterval(() => {
+      this.timeContainer.innerHTML = `Race time:\n${formatTime(time)}`;
+      time++;
+    }, 1000);
+  }
+
+  onFinishRace(): void {
+    document.body.appendChild(this.scoreContainer);
+    clearInterval(this.raceCounterInterval);
+    this.scoreContainer.innerHTML += `</br> ${this.timeContainer.innerText}`;
+    this.scoreContainer.classList.add('finished');
+  }
+
   addEventListeners(): void {
     eventService.on(Events.UPDATE_SCORE, this.onUpdateScore, this);
     eventService.on(Events.GAS, this.onGas, this);
     eventService.on(Events.CHECKPOINT_LOAD, this.onCheckpointLoad, this);
+    eventService.on(Events.RACE_START, this.onStartRace, this);
+    eventService.on(Events.RACE_FINISH, this.onFinishRace, this);
   }
 }

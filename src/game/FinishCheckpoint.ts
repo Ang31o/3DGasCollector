@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 import { Engine } from '../engine/Engine';
 import eventService from '../engine/utilities/eventService';
 import { Events } from '../events';
@@ -13,6 +14,17 @@ export class FinishCheckpoint extends GasCheckpoint {
     this.gas = 0;
     this.passedCheckpoints = 0;
     this.instance.visible = false;
+  }
+
+  createShape(): CANNON.Box {
+    const shape = new CANNON.Box(
+      new CANNON.Vec3(
+        this.instance.scale.x,
+        this.instance.scale.y,
+        this.instance.scale.z
+      )
+    );
+    return shape;
   }
 
   onCollide(): void {

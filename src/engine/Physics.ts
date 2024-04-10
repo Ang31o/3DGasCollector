@@ -54,9 +54,10 @@ export class Physics implements GameEntity {
 
   update() {
     if (this.bodiesForRemoval.length > 0) {
-      console.log(this.bodiesForRemoval);
-
-      this.bodiesForRemoval.forEach((body) => this.world.removeBody(body));
+      this.bodiesForRemoval.forEach((body) => {
+        body.shapes.forEach((shape) => body.removeShape(shape));
+        this.world.removeBody(body);
+      });
       this.bodiesForRemoval = [];
     }
     this.world.step(1 / 60, this.engine.time.deltaTime, 3);

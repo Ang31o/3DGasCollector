@@ -55,7 +55,7 @@ export class RectLight {
   }
 
   toggleLight(isVisible: boolean): this {
-    this.instance.visible = isVisible;
+    this.instance.intensity = isVisible ? this.lightProps.intensity : 0;
     if (this.lightHelper) this.lightHelper.visible = isVisible;
     this.isLightOn = isVisible;
     return this;

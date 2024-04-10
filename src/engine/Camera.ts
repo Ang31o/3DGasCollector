@@ -27,7 +27,7 @@ export class Camera implements GameEntity {
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      100
     );
     this.instance.position.z = -7;
     this.instance.position.y = 2.5;
@@ -83,8 +83,7 @@ export class Camera implements GameEntity {
   }
 
   rotateAroundTarget(): void {
-    // Calculate new position for the camera based on polar coordinates
-    const angle = this.engine.time.currentTime * 0.2; // Use time to animate the orbit
+    const angle = (this.engine.time.currentTime + 16) * 0.2; // Use time to animate the orbit
     const parent = this.followTarget.parent;
     if (parent) {
       const x = parent?.position.x + 10 * Math.cos(angle);
