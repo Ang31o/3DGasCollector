@@ -36,8 +36,6 @@ export class Camera implements GameEntity {
 
   addCascadeShadowMaps(): void {
     this.csm = new CSM({
-      fade: true,
-      far: this.instance.far,
       cascades: 4,
       shadowMapSize: 4096,
       lightDirection: new THREE.Vector3(-1, -1, 0),

@@ -30,7 +30,7 @@ export class Resources extends EventEmitter {
     () => {
       this.emit('loaded');
     },
-    (url: string, item: number, total: number) => {
+    (_url: string, item: number, total: number) => {
       this.emit('progress', item / total);
     },
     (url: string) => {

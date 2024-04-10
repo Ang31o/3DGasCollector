@@ -27,7 +27,6 @@ export class Map extends BaseEntity {
     this.addLights();
     this.initPhysics();
     this.addEventListeners();
-    window.m = this;
   }
 
   initObject3D(): void {

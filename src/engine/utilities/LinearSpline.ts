@@ -1,16 +1,15 @@
 export default class LinearSpline {
-  points: any[];
+  private points: number[][];
   constructor(private lerp: any) {
     this.points = [];
   }
 
-  addPoint(t, d): void {
+  addPoint(t: number, d: number): void {
     this.points.push([t, d]);
   }
 
-  get(t): number {
+  get(t: number): number {
     let p1 = 0;
-
     for (let i = 0; i < this.points.length; i++) {
       if (this.points[i][0] >= t) {
         break;

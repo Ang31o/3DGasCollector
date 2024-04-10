@@ -41,21 +41,8 @@ export class Car extends BaseEntity {
     super();
     this.initObject3D();
     this.initPhysics();
-    // this.createDemoCannonBox();
     this.addEventListeners();
-    // window.c = this;
-    // window.THREE = THREE;
-    // window.CANNON = CANNON;
   }
-
-  // createDemoCannonBox() {
-  //   this.wheelMaterial = new CANNON.Material('wheel');
-  //   const shape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 2));
-  //   this.box = new CANNON.Body({ mass: 10, material: new CANNON.Material() });
-  //   this.box.addShape(shape);
-  //   this.box.position.set(-5, 12, -1);
-  //   this.engine.physics.world.addBody(this.box);
-  // }
 
   initObject3D(): void {
     this.instance = this.engine.resources.getItem('Car').scene;

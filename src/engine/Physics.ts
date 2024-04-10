@@ -29,7 +29,10 @@ export class Physics implements GameEntity {
 
   initDebugRenderer(): void {
     if (localStorage.getItem('debug') === 'true') {
-      this.debugRenderer = new CannonDebugger(this.engine.scene, this.world);
+      this.debugRenderer = new (CannonDebugger as any)(
+        this.engine.scene,
+        this.world
+      );
     }
   }
 
