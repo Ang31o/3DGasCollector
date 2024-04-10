@@ -1,37 +1,66 @@
+import { Events } from '../../events';
+import eventService from '../utilities/eventService';
 import './loader.scss';
 
 export class Loader {
-  private readonly element: HTMLDivElement;
+  private readonly loaderElement: HTMLDivElement;
   public isComplete = false;
+  private startButton: HTMLButtonElement;
+  private loaderInner: HTMLDivElement;
+  private controls: HTMLDivElement;
 
   constructor() {
-    this.element = document.createElement('div');
-    this.element.classList.add('loader');
-    this.element.insertAdjacentHTML(
-      'beforeend',
-      `
-        <div class="loader-inner" aria-role="progressbar">
-          <h1 class="progress-number">0%</h1>
-          <div class="progress-bar"></div>
-        </div>
-        `
-    );
+    this.loaderElement = document.createElement('div');
+    this.loaderElement.classList.add('loader');
+    document.body.append(this.loaderElement);
 
-    this.start();
+    this.addLoaderInner();
+    this.addStartButton();
+    this.addControls();
   }
 
-  start() {
-    document.body.prepend(this.element);
+  addLoaderInner(): void {
+    this.loaderInner = document.createElement('div');
+    this.loaderInner.classList.add('loader-inner');
+    this.loaderInner.insertAdjacentHTML(
+      'beforeend',
+      `
+    <h1 class="progress-number">0%</h1>
+          <div class="progress-bar"></div>
+          `
+    );
+    this.loaderElement.append(this.loaderInner);
+  }
+
+  addControls(): void {
+    this.controls = document.createElement('div');
+    this.controls.classList.add('controls');
+    this.controls.insertAdjacentHTML(
+      'beforeend',
+      `<p>Use [W], [A], [S], [D] to move</p>
+       <p>Use [SPACE] to break</p>
+       <p>Use [R] to reload to the last checkpoint</p>
+       <p>Use [L] to toggle lights</p>
+       `
+    );
+    document.body.append(this.controls);
+  }
+
+  addStartButton(): void {
+    this.startButton = document.createElement('button');
+    this.startButton.addEventListener('click', this.onStart.bind(this));
+    this.startButton.classList.add('start-button');
+    this.startButton.textContent = 'Start';
   }
 
   setProgress(progress: number) {
-    const progressNumber = this.element.querySelector(
+    const progressNumber = this.loaderElement.querySelector(
       '.progress-number'
     ) as HTMLHeadingElement;
 
     progressNumber!.innerText = `${Math.floor(progress * 100)}%`;
 
-    const progressBar = this.element.querySelector(
+    const progressBar = this.loaderElement.querySelector(
       '.progress-bar'
     ) as HTMLDivElement;
 
@@ -39,7 +68,15 @@ export class Loader {
   }
 
   complete() {
-    this.element.remove();
+    this.loaderInner.remove();
+    this.loaderElement.classList.add('transparent');
+    this.loaderElement.prepend(this.startButton);
+  }
+
+  onStart(): void {
     this.isComplete = true;
+    this.loaderElement.remove();
+    this.controls.remove();
+    eventService.emit(Events.START_GAME);
   }
 }

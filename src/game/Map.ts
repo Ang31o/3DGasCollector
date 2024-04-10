@@ -1,16 +1,20 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { Engine } from '../engine/Engine';
-import { GameEntity } from '../engine/GameEntity';
+import { BaseEntity } from '../engine/BaseEntity';
 import { RectLight } from './RectLight';
 import { Events } from '../events';
-import { Checkpoint } from './Checkpoint';
+import { GasCheckpoint } from './GasCheckpoint';
 import eventService from '../engine/utilities/eventService';
+import { Bump } from './Bump';
+import { GameState } from './state/GameState';
+import { FinishCheckpoint } from './FinishCheckpoint';
 
-export class Map extends GameEntity {
+export class Map extends BaseEntity {
   public physicBody!: CANNON.Body;
   public proxies: any = {};
-  public checkpoints: any = [];
+  public checkpoints: GasCheckpoint[] = [];
+  public bumps: Bump[] = [];
   private sun!: THREE.DirectionalLight;
   private lightStartLeft: RectLight;
   private lightStartRight: RectLight;
@@ -72,17 +76,25 @@ export class Map extends GameEntity {
 
   initPhysics(): void {
     // const shape = new CANNON.Plane();
-    // const body = new CANNON.Body({ mass: 0 });
+    // const body = new CANNON.Body({
+    //   mass: 0,
+    //   material: new CANNON.Material('grassMaterial'),
+    // });
     // body.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+    // body.position.set(0, -0.7, 0);
     // body.addShape(shape);
     // this.engine.physics.world.addBody(body);
     this.checkpoints = [];
-    this.instance.children.forEach((child: THREE.Object3D) => {
+    this.instance.children.forEach((child: THREE.Object3D | THREE.Mesh) => {
       if (child.name.includes('collider')) this.createRoadCollider(child);
+      if (child instanceof THREE.Mesh) {
+        if (child.name.includes('checkpoint')) this.createCheckpoint(child);
+        if (child.name.includes('pylon')) this.createBump(child);
+        if (child.name.includes('finish')) this.createFinish(child);
+      }
     });
-    this.instance.children.forEach((child: THREE.Object3D) => {
-      if (child.name.includes('checkpoint')) this.createCheckpoint(child);
-    });
+    GameState.setMaxScore(this.checkpoints.length);
+    eventService.emit(Events.UPDATE_SCORE);
   }
 
   createRoadCollider(collider: THREE.Object3D): void {
@@ -123,12 +135,20 @@ export class Map extends GameEntity {
     this.engine.physics.world.addBody(body);
   }
 
-  createCheckpoint(checkpoint: THREE.Object3D): void {
-    this.checkpoints.push(new Checkpoint(this.engine, checkpoint));
+  createCheckpoint(checkpoint: THREE.Mesh): void {
+    this.checkpoints.push(new GasCheckpoint(this.engine, checkpoint));
   }
 
-  onRemoveInstance(checkpointInstance: Checkpoint): void {
-    if (checkpointInstance instanceof Checkpoint) {
+  createBump(bump: THREE.Mesh): void {
+    this.bumps.push(new Bump(this.engine, bump));
+  }
+
+  createFinish(finishCube: THREE.Mesh): void {
+    new FinishCheckpoint(this.engine, finishCube);
+  }
+
+  onRemoveInstance(checkpointInstance: GasCheckpoint): void {
+    if (checkpointInstance instanceof GasCheckpoint) {
       this.checkpoints.splice(this.checkpoints.indexOf(checkpointInstance), 1);
     }
   }
@@ -157,13 +177,14 @@ export class Map extends GameEntity {
 
   addEventListeners(): void {
     eventService.on(Events.REMOVE_INSTANCE, this.onRemoveInstance, this);
-    eventService.on(Events.START_RACE, this.onStartRace, this);
+    eventService.on(Events.RACE_START, this.onStartRace, this);
     eventService.on(Events.CHECKPOINT_PASSED, this.onCheckpointPassed, this);
   }
 
-  update(delta: number): void {
-    this.checkpoints.forEach((checkpoint: Checkpoint) =>
-      checkpoint.update(delta)
+  update(): void {
+    this.checkpoints.forEach((checkpoint: GasCheckpoint) =>
+      checkpoint.update()
     );
+    this.bumps.forEach((bump: Bump) => bump.update());
   }
 }

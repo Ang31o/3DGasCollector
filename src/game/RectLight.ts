@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHelper';
-import { GameEntity } from '../engine/GameEntity';
+import { BaseEntity } from '../engine/BaseEntity';
 
 export class RectLight {
   public instance!: THREE.RectAreaLight;
@@ -8,7 +8,7 @@ export class RectLight {
   public isLightOn!: boolean;
 
   constructor(
-    private gameEntity: GameEntity,
+    private gameEntity: BaseEntity,
     private lightModelName: string,
     private lightProps: {
       color: number;

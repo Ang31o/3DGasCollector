@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { Engine } from '../engine/Engine';
-import { GameEntity } from '../engine/GameEntity';
+import { BaseEntity } from '../engine/BaseEntity';
 import { Exhaust } from './exhaust/Exhaust';
 import eventService from '../engine/utilities/eventService';
 import { Events } from '../events';
@@ -9,8 +9,8 @@ import { RectLight } from './RectLight';
 import { Constants } from '../constants';
 import { GameState } from './state/GameState';
 
-export class Car extends GameEntity {
-  private vehicle!: CANNON.RaycastVehicle;
+export class Car extends BaseEntity {
+  public vehicle: CANNON.RaycastVehicle;
   private wheels!: THREE.Object3D<THREE.Object3DEventMap>[];
   private exhaust!: Exhaust;
   private maxSteerVal: number = 1; // How sharp it steers
@@ -80,6 +80,7 @@ export class Car extends GameEntity {
       width: 0.4,
       height: 0.18,
       displayHelper: false,
+      visible: false,
     };
     const brakeLightProps = {
       color: 0xff0000,
@@ -123,6 +124,7 @@ export class Car extends GameEntity {
     );
     this.body = new CANNON.Body({
       mass: 170,
+      material: new CANNON.Material('carMaterial'),
     });
     this.body.addShape(chassisShape);
     this.body.position.set(
@@ -235,14 +237,18 @@ export class Car extends GameEntity {
   }
 
   onForward(forceValue: number): void {
+    if (forceValue < 0 && GameState.gas <= 0) return;
     this.vehicle.applyEngineForce(forceValue, 0);
     this.vehicle.applyEngineForce(forceValue, 1);
-    eventService.emit(Events.GAS);
+    GameState.burnGas();
+    eventService.emit(Events.GAS, forceValue !== 0);
   }
 
-  onGearboxReverse(): void {
+  onReverse(): void {
+    if (GameState.gas <= 0) return;
     this.vehicle.applyEngineForce(this.maxForceBack, 0);
     this.vehicle.applyEngineForce(this.maxForceBack, 1);
+    GameState.burnGas();
     eventService.emit(Events.GAS);
   }
 
@@ -273,7 +279,7 @@ export class Car extends GameEntity {
       this.onForward(-this.maxForceForward);
     }
     if (this.pressedKeys.indexOf('s') > -1) {
-      this.onGearboxReverse();
+      this.onReverse();
     }
     if (this.pressedKeys.indexOf('a') > -1) {
       this.onSteer(1);
@@ -298,12 +304,24 @@ export class Car extends GameEntity {
     }
   }
 
+  updateEngineSound(): void {
+    this.engine.audioPlayer?.setCarEngineSpeed(
+      this.vehicle.currentVehicleSpeedKmHour
+    );
+  }
+
+  resetToLastCheckpoint(): void {
+    this.body.position.copy(GameState.lastCheckpoint.p);
+    this.body.quaternion.copy(GameState.lastCheckpoint.q);
+    GameState.loadCheckpoint();
+    this.stopVehicle();
+    eventService.emit(Events.CHECKPOINT_LOAD);
+  }
+
   addKeyboardControls(): void {
     document.addEventListener('keydown', (event) => {
       if (event.key === 'r') {
-        this.body.position.copy(GameState.lastCheckpoint.p);
-        this.body.quaternion.copy(GameState.lastCheckpoint.q);
-        this.stopVehicle();
+        this.resetToLastCheckpoint();
         return;
       }
       if (event.key === 'l') {
@@ -328,14 +346,13 @@ export class Car extends GameEntity {
     });
   }
 
-  onCheckpointPassed(): void {
+  onCheckpointPassed(gas: number): void {
     GameState.checkpointPassed(
       this.body.position.clone(),
       this.body.quaternion.clone()
     );
-    document.getElementsByClassName(
-      'score-container'
-    )[0].textContent = `Score: ${GameState.score}`;
+    GameState.addGas(gas);
+    eventService.emit(Events.UPDATE_SCORE);
   }
 
   onStartRace(): void {
@@ -343,12 +360,12 @@ export class Car extends GameEntity {
   }
 
   onUpdateSpeed(surfaceMaterial: string): void {
-    this.maxForceForward = surfaceMaterial === 'grassMaterial' ? 100 : 1000;
+    this.maxForceForward = surfaceMaterial === 'grassMaterial' ? 1000 : 1000;
   }
 
   addEventListeners(): void {
     eventService.on(Events.CHECKPOINT_PASSED, this.onCheckpointPassed, this);
-    eventService.on(Events.START_RACE, this.onStartRace, this);
+    eventService.on(Events.RACE_START, this.onStartRace, this);
     eventService.on(Events.UPDATE_SPEED, this.onUpdateSpeed, this);
   }
 

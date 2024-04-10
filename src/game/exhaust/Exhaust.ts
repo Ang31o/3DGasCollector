@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GameEntity } from '../../engine/GameEntity';
+import { BaseEntity } from '../../engine/BaseEntity';
 import { Engine } from '../../engine/Engine';
 import vertexShader from './vertexShader.glsl';
 import fragmentShader from './fragmentShader.glsl';
@@ -7,8 +7,9 @@ import { Car } from '../Car';
 import LinearSpline from '../../engine/utilities/LinearSpline';
 import { Events } from '../../events';
 import eventService from '../../engine/utilities/eventService';
+import { GameState } from '../state/GameState';
 
-export class Exhaust extends GameEntity {
+export class Exhaust extends BaseEntity {
   private count: number = 2;
   private geometry!: THREE.BufferGeometry<THREE.NormalBufferAttributes>;
   private material!: THREE.ShaderMaterial;
@@ -178,7 +179,14 @@ export class Exhaust extends GameEntity {
 
   addExhaustIdle(): void {
     clearInterval(this.emitterInterval);
-    this.emitterInterval = setInterval(() => this.emitParticles(), 250);
+    this.emitterInterval = setInterval(() => {
+      if (GameState.gas > 0) this.emitParticles();
+      if (GameState.isSoundOn) {
+        const engineSpeed =
+          Math.floor(Math.abs(this.car.vehicle.currentVehicleSpeedKmHour)) * 3;
+        this.engine.audioPlayer?.setCarEngineSpeed(engineSpeed);
+      }
+    }, 250);
   }
 
   addEventListeners(): void {

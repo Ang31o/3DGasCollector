@@ -1,3 +1,17 @@
+span {
+  font-size: 30px;
+}
+
+.container {
+  position: absolute;
+  font-family: 'Bungee Shade', sans-serif;
+  color: white;
+  background: rgb(165 211 188 / 64%);
+  border-radius: 10px;
+  padding: 10px;
+  user-select: none;
+}
+
 .info-container {
   position: absolute;
   bottom: 0;
@@ -14,6 +28,10 @@
   color: #fff;
   font-family: 'Helvetica', 'Arial', sans-serif;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+
+  a {
+    color: white;
+  }
 
   &:hover {
     opacity: 100%;
@@ -75,14 +93,76 @@
 }
 
 #time-container {
-  position: absolute;
   top: 40px;
+  left: 10px;
   user-select: none;
-  color: #fff;
-  font-family: 'Bungee Shade', sans-serif;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   font-size: 30px;
   padding: 16px 20px;
   white-space: pre-line;
   line-height: 1.5;
+}
+
+.gas-container {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  width: 340px;
+  bottom: 90px;
+  left: 0;
+  right: 0;
+  margin: auto;
+}
+
+#gas-bar {
+  width: 300px;
+  height: 15px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  border: 2px solid white;
+  overflow: hidden;
+}
+#gas {
+  height: 100%;
+  background-color: #4caf50;
+  border-radius: 10px;
+  transition: width 0.3s ease;
+
+  &.full {
+    background-color: #4caf50;
+  }
+
+  &.half-full {
+    background-color: #dccc56;
+  }
+
+  &.empty {
+    background-color: #dc5756;
+  }
+}
+
+.sound-container {
+  top: 160px;
+  right: 10px;
+
+  span {
+    margin-right: 10px;
+  }
+}
+.music-container {
+  top: 40px;
+  right: 10px;
+
+  span {
+    margin-right: 10px;
+  }
+}
+
+.sound-button {
+  font-size: 30px;
+  background-color: white;
+  border-radius: 50px;
+  border: none;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
 }

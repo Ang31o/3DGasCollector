@@ -5,8 +5,13 @@ export class GameState {
   private static _mapCounter: number;
   private static _gamePhase: GamePhase;
   private static _score: number;
+  private static _scoreMax: number;
+  private static _gas: number;
+  private static _lastGas: number;
   private static _lastCheckpointPosition: CANNON.Vec3;
   private static _lastCheckpointQuaternion: CANNON.Quaternion;
+  private static _isSoundOn: boolean;
+  private static _isMusicOn: boolean;
 
   static get map(): string {
     return `map${this._mapCounter}`;
@@ -23,8 +28,50 @@ export class GameState {
     return this._gamePhase;
   }
 
+  static get maxScore(): number {
+    return this._scoreMax;
+  }
+
+  static get gas(): number {
+    return this._gas;
+  }
+
   static get score(): number {
     return this._score;
+  }
+
+  static get isSoundOn(): boolean {
+    return this._isSoundOn;
+  }
+
+  static get isMusicOn(): boolean {
+    return this._isMusicOn;
+  }
+
+  static updateGamePhase(newGamePhase: GamePhase): void {
+    this._gamePhase = newGamePhase;
+  }
+
+  static setMaxScore(maxScore: number) {
+    this._scoreMax = maxScore;
+  }
+
+  static setSoundOn(isOn: boolean) {
+    this._isSoundOn = isOn;
+    localStorage.setItem('isSoundOn', isOn.toString());
+  }
+
+  static setMusicOn(isOn: boolean) {
+    this._isMusicOn = isOn;
+    localStorage.setItem('isMusicOn', isOn.toString());
+  }
+
+  static addGas(value: number): void {
+    if (this._gas < 100) this._gas += value;
+  }
+
+  static burnGas(): void {
+    this._gas -= 0.05;
   }
 
   static init(): void {
@@ -32,21 +79,30 @@ export class GameState {
   }
 
   static resetStateData(): void {
+    this._gamePhase = GamePhase.INIT;
+    this._gas = 20;
+    this._isSoundOn = localStorage.getItem('isSoundOn') === 'true';
+    this._isMusicOn = localStorage.getItem('isMusicOn') === 'true';
     this._mapCounter = 1;
     this._score = 0;
-    // this._lastCheckpointPosition = new CANNON.Vec3(0, 0, 0);
-    // this._lastCheckpointQuaternion = new CANNON.Quaternion(0, 0, 0, 1);
-    this._lastCheckpointPosition = new CANNON.Vec3(
-      80.71468772403756,
-      0.9055674094114929,
-      123.96261442020729
-    );
-    this._lastCheckpointQuaternion = new CANNON.Quaternion(
-      0.013669761284159117,
-      -0.7160714627932293,
-      0.01402683087036715,
-      0.6977521378077842
-    );
+    this._scoreMax = 0;
+    this._lastCheckpointPosition = new CANNON.Vec3(0, 0, 0);
+    this._lastCheckpointQuaternion = new CANNON.Quaternion(0, 0, 0, 1);
+    // this._lastCheckpointPosition = new CANNON.Vec3(
+    //   80.71468772403756,
+    //   0.9055674094114929,
+    //   123.96261442020729
+    // );
+    // this._lastCheckpointQuaternion = new CANNON.Quaternion(
+    //   0.013669761284159117,
+    //   -0.7160714627932293,
+    //   0.01402683087036715,
+    //   0.6977521378077842
+    // );
+  }
+
+  static loadCheckpoint(): void {
+    this._gas = this._lastGas;
   }
 
   static checkpointPassed(
@@ -56,5 +112,6 @@ export class GameState {
     this._lastCheckpointPosition.copy(checkpointPosition);
     this._lastCheckpointQuaternion.copy(checkpointQuaternion);
     this._score++;
+    this._lastGas = this.gas;
   }
 }

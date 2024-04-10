@@ -1,16 +1,18 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { Engine } from '../engine/Engine';
-import { GameEntity } from '../engine/GameEntity';
+import { BaseEntity } from '../engine/BaseEntity';
 import eventService from '../engine/utilities/eventService';
 import { Events } from '../events';
 
-export class Checkpoint extends GameEntity {
-  private isCollected: boolean = false;
+export class GasCheckpoint extends BaseEntity {
+  public isCollected: boolean = false;
   private opacity: number = 1;
   private fadeSpeed: number = 0.01;
-  constructor(private engine: Engine, public instance: THREE.Mesh) {
+  public gas: number;
+  constructor(public engine: Engine, public instance: THREE.Mesh) {
     super();
+    this.gas = instance.userData.gas || 15;
     this.initPhysics();
     this.addEventListeners();
   }
@@ -26,7 +28,7 @@ export class Checkpoint extends GameEntity {
     this.body = new CANNON.Body({
       mass: 0,
       collisionResponse: false, // Don't slow down the car when collided
-      material: new CANNON.Material('checkpoint'),
+      material: new CANNON.Material('checkpointMaterial'),
     });
     this.body.addShape(shape);
     this.body.position.set(
@@ -40,7 +42,7 @@ export class Checkpoint extends GameEntity {
   onCollide(): void {
     if (!this.isCollected) {
       eventService.emit(Events.REMOVE_BODY, this.body);
-      eventService.emit(Events.CHECKPOINT_PASSED);
+      eventService.emit(Events.CHECKPOINT_PASSED, this.gas);
       this.isCollected = true;
       // Must clone a material so we can fade-out just this collected checkpoint box and not all others,
       // bc they are sharing the same material

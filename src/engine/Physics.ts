@@ -1,19 +1,18 @@
 import * as CANNON from 'cannon-es';
 import CannonDebugger from 'cannon-es-debugger';
-import { GameEntity } from './GameEntity';
 import { Engine } from './Engine';
 import { Constants } from '../constants';
 import eventService from './utilities/eventService';
 import { Events } from '../events';
+import { GameEntity } from './GameEntity';
 
-export class Physics extends GameEntity {
+export class Physics implements GameEntity {
   public world: CANNON.World;
   public debugRenderer: any;
   public isDebugOn: boolean = false;
   public bodiesForRemoval: CANNON.Body[] = [];
 
   constructor(private engine: Engine) {
-    super();
     this.initWorld();
     this.initGui();
     this.initDebugRenderer();

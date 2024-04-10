@@ -1,5 +1,5 @@
-import { GameEntity } from './GameEntity';
 import { Engine } from './Engine';
+import { GameEntity } from './GameEntity';
 import { Resource } from './Resources';
 
 export type ExperienceConstructor = new (engine: Engine) => Experience;

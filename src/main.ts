@@ -7,7 +7,7 @@ new Engine({
   experience: Game,
   info: {
     github: 'https://github.com/Ang31o/3DRacer',
-    description: 'A simple car racing game, made with Three.js',
+    description: 'A simple car racing game, made with Three.js + Cannon.js',
     documentTitle: '3D Racer',
     title: '3D Racer',
   },

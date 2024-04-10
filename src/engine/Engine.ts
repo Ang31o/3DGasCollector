@@ -10,21 +10,29 @@ import { Experience, ExperienceConstructor } from './Experience';
 import { Loader } from './interface/Loader';
 import { Raycaster } from './Raycaster';
 import { Physics } from './Physics';
+import eventService from './utilities/eventService';
+import { Events } from '../events';
+import { GameState } from '../game/state/GameState';
+import { GamePhase } from './core/enums/GamePhase.enum';
+import { AudioPlayer } from './AudioPlayer';
 
 export class Engine {
   public readonly camera!: Camera;
   public readonly scene!: THREE.Scene;
   public readonly renderEngine!: RenderEngine;
   public readonly time!: RenderLoop;
-  public readonly debug!: DebugUI;
+  public debug!: DebugUI;
   public readonly raycaster!: Raycaster;
-  public readonly infoUI!: InfoUI;
+  public infoUI!: InfoUI;
   public readonly sizes!: Sizes;
   public readonly canvas!: HTMLCanvasElement;
   public readonly resources!: Resources;
   public readonly experience!: Experience;
   public readonly physics: Physics;
+  public audioPlayer!: AudioPlayer;
   private readonly loader!: Loader;
+  private info: InfoConfig | undefined;
+  private resourcesLoaded: boolean = false;
 
   constructor({
     canvas,
@@ -38,15 +46,14 @@ export class Engine {
     if (!canvas) {
       throw new Error('No canvas provided');
     }
-
+    this.info = info;
     this.canvas = canvas;
     this.sizes = new Sizes(this);
-    this.debug = new DebugUI();
     this.time = new RenderLoop(this);
     this.scene = new THREE.Scene();
+    this.debug = new DebugUI();
     this.camera = new Camera(this);
     this.raycaster = new Raycaster(this);
-    this.infoUI = new InfoUI(info);
     this.renderEngine = new RenderEngine(this);
     this.experience = new experience(this);
     this.resources = new Resources(this.experience.resources);
@@ -56,16 +63,28 @@ export class Engine {
     this.resources.on('loaded', () => {
       this.experience.init();
       this.loader.complete();
+      this.resourcesLoaded = true;
+      // Delay the initialization of audio player to be sure it's loaded correctly
+      setTimeout(() => (this.audioPlayer = new AudioPlayer(this)), 500);
     });
 
     this.resources.on('progress', (progress: number) => {
       this.loader.setProgress(progress);
     });
+    this.addEventListeners();
+  }
+
+  onStartGame(): void {
+    this.infoUI = new InfoUI(this.info);
+    GameState.updateGamePhase(GamePhase.GAME_START);
+  }
+
+  addEventListeners(): void {
+    eventService.on(Events.START_GAME, this.onStartGame, this);
   }
 
   update(delta: number) {
-    if (!this.loader.isComplete) return;
-
+    if (!this.resourcesLoaded) return;
     this.camera.update();
     this.renderEngine.update();
     this.experience.update(delta);

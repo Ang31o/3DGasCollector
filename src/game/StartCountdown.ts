@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { Engine } from '../engine/Engine';
-import { GameEntity } from '../engine/GameEntity';
+import { BaseEntity } from '../engine/BaseEntity';
 import eventService from '../engine/utilities/eventService';
 import { Events } from '../events';
 import { Font } from 'three/examples/jsm/loaders/FontLoader';
 
-export class StartCountdown extends GameEntity {
+export class StartCountdown extends BaseEntity {
   private geometry: TextGeometry;
   private material: THREE.MeshMatcapMaterial;
   private textGeometryParameters: any = {
@@ -34,6 +34,7 @@ export class StartCountdown extends GameEntity {
 
   setText(text: string): void {
     this.destroy();
+    if (text !== 'GO!') eventService.emit(Events.COUNTDOWN);
     this.geometry = new TextGeometry(text, this.textGeometryParameters);
     this.geometry.center();
     this.material = new THREE.MeshMatcapMaterial({
@@ -56,7 +57,7 @@ export class StartCountdown extends GameEntity {
       this.textsCounter++;
       this.setText(this.texts[this.textsCounter]);
       if (this.texts[this.textsCounter] === 'GO!') {
-        eventService.emit(Events.START_RACE);
+        eventService.emit(Events.RACE_START);
       }
     }
   }
