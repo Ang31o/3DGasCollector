@@ -14,8 +14,10 @@ export class Car extends BaseEntity {
   private wheels!: THREE.Object3D<THREE.Object3DEventMap>[];
   private exhaust!: Exhaust;
   private maxSteerVal: number = 1; // How sharp it steers
-  private maxForceForward: number = 1000; // How fast it goes
-  private maxForceBack: number = 500; // How fast it goes
+  private minForceForward: number = 300;
+  private maxForceForward: number = 1000;
+  private forceForward: number = 1000; // How fast it goes
+  private forceBackward: number = 500; // How fast it goes
   private brakeForce: number = 5; // How fast it breaks
   private movementKeys = [
     'w',
@@ -246,8 +248,8 @@ export class Car extends BaseEntity {
 
   onReverse(): void {
     if (GameState.gas <= 0) return;
-    this.vehicle.applyEngineForce(this.maxForceBack, 0);
-    this.vehicle.applyEngineForce(this.maxForceBack, 1);
+    this.vehicle.applyEngineForce(this.forceBackward, 0);
+    this.vehicle.applyEngineForce(this.forceBackward, 1);
     GameState.burnGas();
     eventService.emit(Events.GAS);
   }
@@ -276,7 +278,7 @@ export class Car extends BaseEntity {
     if (this.pressedKeys.length === 0) return;
 
     if (this.pressedKeys.indexOf('w') > -1) {
-      this.onForward(-this.maxForceForward);
+      this.onForward(-this.forceForward);
     }
     if (this.pressedKeys.indexOf('s') > -1) {
       this.onReverse();
@@ -315,6 +317,7 @@ export class Car extends BaseEntity {
     this.body.quaternion.copy(GameState.lastCheckpoint.q);
     GameState.loadCheckpoint();
     this.stopVehicle();
+    this.forceForward = this.maxForceForward;
     eventService.emit(Events.CHECKPOINT_LOAD);
   }
 
@@ -360,7 +363,10 @@ export class Car extends BaseEntity {
   }
 
   onUpdateSpeed(surfaceMaterial: string): void {
-    this.maxForceForward = surfaceMaterial === 'grassMaterial' ? 1000 : 1000;
+    this.forceForward =
+      surfaceMaterial === 'grassMaterial'
+        ? this.minForceForward
+        : this.maxForceForward;
   }
 
   addEventListeners(): void {
