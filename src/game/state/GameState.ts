@@ -81,24 +81,21 @@ export class GameState {
   static resetStateData(): void {
     this._gamePhase = GamePhase.INIT;
     this._gas = 20;
-    this._isSoundOn = localStorage.getItem('isSoundOn') === 'true';
-    this._isMusicOn = localStorage.getItem('isMusicOn') === 'true';
+    this.setSoundOn(
+      localStorage.getItem('isSoundOn')
+        ? localStorage.getItem('isSoundOn') === 'true'
+        : true
+    );
+    this.setMusicOn(
+      localStorage.getItem('isMusicOn')
+        ? localStorage.getItem('isMusicOn') === 'true'
+        : true
+    );
     this._mapCounter = 1;
     this._score = 0;
     this._scoreMax = 0;
     this._lastCheckpointPosition = new CANNON.Vec3(0, 0, 0);
     this._lastCheckpointQuaternion = new CANNON.Quaternion(0, 0, 0, 1);
-    // this._lastCheckpointPosition = new CANNON.Vec3(
-    //   80.71468772403756,
-    //   0.9055674094114929,
-    //   123.96261442020729
-    // );
-    // this._lastCheckpointQuaternion = new CANNON.Quaternion(
-    //   0.013669761284159117,
-    //   -0.7160714627932293,
-    //   0.01402683087036715,
-    //   0.6977521378077842
-    // );
   }
 
   static loadCheckpoint(): void {

@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3';
 import { Events } from '../../events';
 
-const excludeFromLog = [Events.GAS];
+const excludeFromLog = [Events.GAS, Events.BUMP];
 
 class eventService extends EventEmitter {
   emit<T extends string | symbol>(event: T, ...args: any[]): boolean {

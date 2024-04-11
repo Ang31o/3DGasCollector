@@ -15,6 +15,7 @@ export class AudioPlayer {
     this.playBackgroundMusic();
     this.playEngineSound();
     this.addEventListeners();
+    window.a = this;
   }
 
   playBackgroundMusic(): void {
@@ -40,8 +41,8 @@ export class AudioPlayer {
     if (GameState.isSoundOn) this.carEngine.play();
   }
 
-  setBufferAndPlaySound(soundName: string): void {
-    if (!GameState.isSoundOn) return;
+  setBufferAndPlaySound(soundName: string, override?: boolean): void {
+    if (!override && !GameState.isSoundOn) return;
     const audio = new THREE.Audio(this.listener);
     audio.setBuffer(this.engine.resources.getItem(soundName));
     audio.play();
@@ -64,7 +65,7 @@ export class AudioPlayer {
   }
 
   onStartGame(): void {
-    this.setBufferAndPlaySound('click');
+    this.setBufferAndPlaySound('click', true);
   }
 
   onCountdown(): void {
