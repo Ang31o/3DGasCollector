@@ -109,6 +109,6 @@ export class GameState {
     this._lastCheckpointPosition.copy(checkpointPosition);
     this._lastCheckpointQuaternion.copy(checkpointQuaternion);
     this._score++;
-    this._lastGas = this.gas;
+    this._lastGas = this._gas;
   }
 }

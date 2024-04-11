@@ -39,3 +39,12 @@ Production files will be placed in the `dist` folder. Then upload those files to
 ![Saving score](assets/showcase/gameplay.gif)
 
 [🎮Try the game!🎮](https://techandeez.com/3dgascollector/)
+
+## Assets
+
+For this game I used following assets:
+
+- [Racing Kit](https://www.kenney.nl/assets/racing-kit)
+- [Low Poly Racing Car](https://free3d.com/3d-model/low-poly-racing-car-22092.html)
+- [Sounds](https://www.zapsplat.com/)
+- [ThreeJS + TypeScript Starter](https://github.com/mayacoda/simple-threejs-typescript-starter)

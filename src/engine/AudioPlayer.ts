@@ -8,6 +8,7 @@ export class AudioPlayer {
   private music: THREE.Audio<GainNode>;
   private listener: THREE.AudioListener;
   private carEngine: THREE.Audio<GainNode>;
+  private isEngineStopped: boolean;
 
   constructor(private engine: Engine) {
     this.listener = new THREE.AudioListener();
@@ -15,7 +16,6 @@ export class AudioPlayer {
     this.playBackgroundMusic();
     this.playEngineSound();
     this.addEventListeners();
-    window.a = this;
   }
 
   playBackgroundMusic(): void {
@@ -60,8 +60,14 @@ export class AudioPlayer {
     }, 200);
   }
 
+  resetCarEngine(): void {
+    this.isEngineStopped = false;
+    if (!this.carEngine.isPlaying) this.carEngine.play();
+  }
+
   onCheckpoint(): void {
     this.setBufferAndPlaySound('checkpoint');
+    this.resetCarEngine();
   }
 
   onStartGame(): void {
@@ -83,6 +89,7 @@ export class AudioPlayer {
 
   onCheckpointLoad(): void {
     this.setBufferAndPlaySound('checkpointLoad');
+    this.resetCarEngine();
   }
 
   onBump(): void {
@@ -102,11 +109,16 @@ export class AudioPlayer {
   }
 
   onUpdateSound(isSoundOn: boolean): void {
-    if (isSoundOn) {
+    if (isSoundOn && !this.isEngineStopped) {
       this.carEngine.play();
     } else {
       this.carEngine.pause();
     }
+  }
+
+  onEngineStop(): void {
+    this.isEngineStopped = true;
+    this.carEngine.pause();
   }
 
   addEventListeners(): void {
@@ -119,5 +131,6 @@ export class AudioPlayer {
     eventService.on(Events.UPDATE_MUSIC, this.onUpdateMusic, this);
     eventService.on(Events.UPDATE_SOUND, this.onUpdateSound, this);
     eventService.on(Events.BUMP, this.onBump, this);
+    eventService.on(Events.ENGINE_STOP, this.onEngineStop, this);
   }
 }

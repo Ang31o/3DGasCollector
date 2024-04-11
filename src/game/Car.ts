@@ -337,11 +337,11 @@ export class Car extends BaseEntity {
   }
 
   onCheckpointPassed(gas: number): void {
+    GameState.addGas(gas);
     GameState.checkpointPassed(
       this.body.position.clone(),
       this.body.quaternion.clone()
     );
-    GameState.addGas(gas);
     eventService.emit(Events.UPDATE_SCORE);
   }
 

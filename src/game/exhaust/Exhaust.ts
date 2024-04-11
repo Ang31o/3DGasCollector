@@ -20,7 +20,7 @@ export class Exhaust extends BaseEntity {
   private particles!: any[];
   private alphaSpline!: LinearSpline;
   private sizeSpline!: LinearSpline;
-  private emitterInterval!: number;
+  private emitterInterval?: number;
   private exhaustEmitPoint: THREE.Object3D<THREE.Object3DEventMap> | undefined;
 
   constructor(private engine: Engine, private car: Car) {
@@ -180,7 +180,13 @@ export class Exhaust extends BaseEntity {
   addExhaustIdle(): void {
     clearInterval(this.emitterInterval);
     this.emitterInterval = setInterval(() => {
-      if (GameState.gas > 0) this.emitParticles();
+      if (GameState.gas > 0) {
+        this.emitParticles();
+      } else {
+        clearInterval(this.emitterInterval);
+        eventService.emit(Events.ENGINE_STOP);
+        delete this.emitterInterval;
+      }
       if (GameState.isSoundOn) {
         const engineSpeed =
           Math.floor(Math.abs(this.car.vehicle.currentVehicleSpeedKmHour)) * 3;
@@ -189,8 +195,14 @@ export class Exhaust extends BaseEntity {
     }, 250);
   }
 
+  onCheckpointPassed(): void {
+    if (!this.emitterInterval) this.addExhaustIdle();
+  }
+
   addEventListeners(): void {
     eventService.on(Events.GAS, this.emitParticles, this);
+    eventService.on(Events.CHECKPOINT_PASSED, this.onCheckpointPassed, this);
+    eventService.on(Events.CHECKPOINT_LOAD, this.onCheckpointPassed, this);
   }
 
   update(delta: number): void {
