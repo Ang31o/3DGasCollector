@@ -43,7 +43,7 @@ export class Loader {
        <p>Use [L] to toggle lights</p>
        `
     );
-    document.body.append(this.controls);
+    this.loaderElement.append(this.controls);
   }
 
   addStartButton(): void {

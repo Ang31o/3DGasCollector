@@ -70,12 +70,7 @@ export class InfoUI {
       `Controls: \n R - reload to last checkpoint`
     );
 
-    document.body.append(
-      container,
-      this.timeContainer,
-      controlsContainer,
-      this.scoreContainer
-    );
+    document.body.append(container, this.timeContainer, this.scoreContainer);
   }
 
   addGasProgress(): void {

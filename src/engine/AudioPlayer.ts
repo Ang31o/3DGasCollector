@@ -62,7 +62,7 @@ export class AudioPlayer {
 
   resetCarEngine(): void {
     this.isEngineStopped = false;
-    if (!this.carEngine.isPlaying) this.carEngine.play();
+    if (!this.carEngine.isPlaying && GameState.isSoundOn) this.carEngine.play();
   }
 
   onCheckpoint(): void {
