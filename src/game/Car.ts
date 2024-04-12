@@ -59,7 +59,7 @@ export class Car extends BaseEntity {
     this.engine.scene.add(...this.wheels);
     eventService.emit(Events.SET_CAMERA_FOLLOW, this.instance);
     this.exhaust = new Exhaust(this.engine, this);
-    this.addLights();
+    // this.addLights();
   }
 
   addLights(): void {
@@ -247,8 +247,8 @@ export class Car extends BaseEntity {
   }
 
   onBreak(brakeForce: number): void {
-    this.lightBrakeLeft.toggleLight(brakeForce !== 0);
-    this.lightBrakeRight.toggleLight(brakeForce !== 0);
+    // this.lightBrakeLeft.toggleLight(brakeForce !== 0);
+    // this.lightBrakeRight.toggleLight(brakeForce !== 0);
     this.vehicle.setBrake(brakeForce, 0);
     this.vehicle.setBrake(brakeForce, 1);
     this.vehicle.setBrake(brakeForce, 2);
@@ -315,8 +315,8 @@ export class Car extends BaseEntity {
         return;
       }
       if (event.key === 'l') {
-        this.lightFrontLeft.toggleLight(!this.lightFrontLeft.isLightOn);
-        this.lightFrontRight.toggleLight(!this.lightFrontRight.isLightOn);
+        // this.lightFrontLeft.toggleLight(!this.lightFrontLeft.isLightOn);
+        // this.lightFrontRight.toggleLight(!this.lightFrontRight.isLightOn);
         return;
       }
       if (

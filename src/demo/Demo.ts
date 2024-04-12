@@ -6,6 +6,7 @@ import { Resource } from '../engine/Resources';
 
 export class Demo implements Experience {
   resources: Resource[] = [];
+  box: Box;
 
   constructor(private engine: Engine) {}
 
@@ -27,15 +28,17 @@ export class Demo implements Experience {
 
     this.engine.scene.add(directionalLight);
 
-    const box = new Box();
-    box.castShadow = true;
-    box.rotation.y = Math.PI / 4;
-    box.position.set(0, 0.5, 0);
+    this.box = new Box();
+    this.box.castShadow = true;
+    this.box.rotation.y = Math.PI / 4;
+    this.box.position.set(0, 0.5, 0);
 
-    this.engine.scene.add(box);
+    this.engine.scene.add(this.box);
   }
 
   resize() {}
 
-  update() {}
+  update() {
+    this.box.rotation.x += 0.1;
+  }
 }

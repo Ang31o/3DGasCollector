@@ -38,7 +38,7 @@ export class Camera implements GameEntity {
     this.csm = new CSM({
       maxFar: 10,
       cascades: 2,
-      shadowMapSize: 512,
+      shadowMapSize: 1024,
       lightDirection: new THREE.Vector3(-1, -1, 0),
       camera: this.instance,
       parent: this.engine.scene,
