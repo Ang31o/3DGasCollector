@@ -23,19 +23,25 @@ export class Map extends BaseEntity {
   constructor(private engine: Engine) {
     super();
     this.initObject3D();
-    this.addSun();
-    this.addLights();
+    // this.addSun();
+    // this.addLights();
     this.initPhysics();
     this.addEventListeners();
   }
 
   initObject3D(): void {
     this.instance = this.engine.resources.getItem('Map').scene;
+    const shadowCasters = ['tree', 'grandStand', 'pylon', 'tent', 'checkpoint'];
+    const shadowReceivers = ['grass', 'road'];
     // Make map parts receive a shadow
     this.instance.traverse((child) => {
       if (child.type === 'Mesh') {
-        child.receiveShadow = true;
-        child.castShadow = true;
+        if (!child.name.includes('collider')) {
+          if (shadowCasters.find((s) => child.name.indexOf(s) > -1))
+            child.castShadow = true;
+          if (shadowReceivers.find((s) => child.name.indexOf(s) > -1))
+            child.receiveShadow = true;
+        }
       }
     });
     this.engine.scene.add(this.instance);
@@ -44,7 +50,7 @@ export class Map extends BaseEntity {
   addSun(): void {
     this.sun = new THREE.DirectionalLight(0xffffff, 1);
     this.sun.position.set(40, 100, -20);
-    this.sun.castShadow = true;
+    // this.sun.castShadow = true;
     this.engine.scene.add(this.sun);
 
     if (localStorage.getItem('debug') === 'true') {
@@ -154,13 +160,13 @@ export class Map extends BaseEntity {
   }
 
   onStartRace(): void {
-    this.lightStartLeft.changeLightColor(0x00ff00);
-    this.lightStartRight.changeLightColor(0x00ff00);
+    // this.lightStartLeft.changeLightColor(0x00ff00);
+    // this.lightStartRight.changeLightColor(0x00ff00);
   }
 
   onCheckpointPassed(): void {
-    this.lightStartLeft.toggleLight(false);
-    this.lightStartRight.toggleLight(false);
+    // this.lightStartLeft.toggleLight(false);
+    // this.lightStartRight.toggleLight(false);
   }
 
   onCollide(event: {
