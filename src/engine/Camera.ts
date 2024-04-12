@@ -42,7 +42,7 @@ export class Camera implements GameEntity {
       lightDirection: new THREE.Vector3(-1, -1, 0),
       camera: this.instance,
       parent: this.engine.scene,
-      lightIntensity: 0.5,
+      lightIntensity: 1.5,
     });
     this.csm.updateFrustums();
   }

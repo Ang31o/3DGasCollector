@@ -4,12 +4,12 @@ export const resources: Resource[] = [
   {
     name: 'Car',
     type: 'gltf',
-    path: 'models/Low-Poly-Racing-Car.glb',
+    path: 'models/Low-Poly-Racing-Car2.glb',
   },
   {
     name: 'Map',
     type: 'gltf',
-    path: 'models/map1.glb',
+    path: 'models/map12.glb',
   },
   {
     name: 'SkyBox',

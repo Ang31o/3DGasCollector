@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { EventEmitter } from './utilities/EventEmitter';
 
 export type Resource =
@@ -19,6 +20,7 @@ type AssetType = 'gltf' | 'texture' | 'cubeTexture' | 'sfx' | 'font3d';
 
 type Loaders = {
   gltf: GLTFLoader;
+  draco: DRACOLoader;
   texture: THREE.TextureLoader;
   cubeTexture: THREE.CubeTextureLoader;
   sfx: THREE.AudioLoader;
@@ -49,11 +51,16 @@ export class Resources extends EventEmitter {
   private initLoaders() {
     this.loaders = {
       gltf: new GLTFLoader(this.loadingManager),
+      draco: new DRACOLoader(this.loadingManager),
       texture: new THREE.TextureLoader(this.loadingManager),
       cubeTexture: new THREE.CubeTextureLoader(this.loadingManager),
       sfx: new THREE.AudioLoader(this.loadingManager),
       font3d: new FontLoader(this.loadingManager),
     };
+    this.loaders.draco.setDecoderPath(
+      'https://www.gstatic.com/draco/versioned/decoders/1.5.7/'
+    );
+    this.loaders.gltf.setDRACOLoader(this.loaders.draco);
   }
 
   getItem(name: string) {
