@@ -38,9 +38,8 @@ export class Loader {
     this.controls.insertAdjacentHTML(
       'beforeend',
       `<p>Use [W], [A], [S], [D] to move</p>
-       <p>Use [SPACE] to break</p>
+       <p>Use [SPACE] to brake</p>
        <p>Use [R] to reload to the last checkpoint</p>
-       <p>Use [L] to toggle lights</p>
        `
     );
     this.loaderElement.append(this.controls);

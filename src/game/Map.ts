@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { Engine } from '../engine/Engine';
 import { BaseEntity } from '../engine/BaseEntity';
-import { RectLight } from './RectLight';
 import { Events } from '../events';
 import { GasCheckpoint } from './GasCheckpoint';
 import eventService from '../engine/utilities/eventService';
@@ -16,15 +15,14 @@ export class Map extends BaseEntity {
   public checkpoints: GasCheckpoint[] = [];
   public bumps: Bump[] = [];
   private sun!: THREE.DirectionalLight;
-  private lightStartLeft: RectLight;
-  private lightStartRight: RectLight;
+  private lightStartLeft: THREE.Mesh | undefined;
+  private lightStartRight: THREE.Mesh | undefined;
   private currentSurfaceMaterial: string | undefined = 'roadMaterial';
 
   constructor(private engine: Engine) {
     super();
     this.initObject3D();
-    // this.addSun();
-    // this.addLights();
+    this.addSun();
     this.initPhysics();
     this.addEventListeners();
   }
@@ -44,40 +42,30 @@ export class Map extends BaseEntity {
         }
       }
     });
+    this.lightStartLeft = this.instance.getObjectByName(
+      'lightStartLeft'
+    ) as THREE.Mesh;
+    this.lightStartRight = this.instance.getObjectByName(
+      'lightStartRight'
+    ) as THREE.Mesh;
+    (
+      this.lightStartLeft?.material as THREE.MeshStandardMaterial
+    ).emissive.r = 1;
+    (
+      this.lightStartRight?.material as THREE.MeshStandardMaterial
+    ).emissive.r = 1;
     this.engine.scene.add(this.instance);
   }
 
   addSun(): void {
-    this.sun = new THREE.DirectionalLight(0xffffff, 1);
+    this.sun = new THREE.DirectionalLight(0xffffff, 0.5);
     this.sun.position.set(40, 100, -20);
-    // this.sun.castShadow = true;
     this.engine.scene.add(this.sun);
 
     if (localStorage.getItem('debug') === 'true') {
       const helper = new THREE.DirectionalLightHelper(this.sun, 5);
       this.engine.scene.add(helper);
     }
-  }
-
-  addLights(): void {
-    const startLightProps = {
-      color: 0xff0000,
-      intensity: 10,
-      width: 2,
-      height: 1,
-      displayHelper: true,
-      visible: true,
-    };
-    this.lightStartLeft = new RectLight(
-      this,
-      'lightStartLeft',
-      startLightProps
-    );
-    this.lightStartRight = new RectLight(
-      this,
-      'lightStartRight',
-      startLightProps
-    );
   }
 
   initPhysics(): void {
@@ -160,13 +148,27 @@ export class Map extends BaseEntity {
   }
 
   onStartRace(): void {
-    // this.lightStartLeft.changeLightColor(0x00ff00);
-    // this.lightStartRight.changeLightColor(0x00ff00);
+    (
+      this.lightStartLeft?.material as THREE.MeshStandardMaterial
+    ).emissive.r = 0;
+    (
+      this.lightStartRight?.material as THREE.MeshStandardMaterial
+    ).emissive.r = 0;
+    (
+      this.lightStartLeft?.material as THREE.MeshStandardMaterial
+    ).emissive.g = 1;
+    (
+      this.lightStartRight?.material as THREE.MeshStandardMaterial
+    ).emissive.g = 1;
   }
 
   onCheckpointPassed(): void {
-    // this.lightStartLeft.toggleLight(false);
-    // this.lightStartRight.toggleLight(false);
+    (
+      this.lightStartLeft?.material as THREE.MeshStandardMaterial
+    ).emissive.g = 0;
+    (
+      this.lightStartRight?.material as THREE.MeshStandardMaterial
+    ).emissive.g = 0;
   }
 
   onCollide(event: {

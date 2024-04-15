@@ -24,7 +24,7 @@ export const resources: Resource[] = [
     ],
   },
   {
-    name: 'matcap8',
+    name: 'matcap5',
     type: 'texture',
     path: 'images/matcaps/5.png',
   },

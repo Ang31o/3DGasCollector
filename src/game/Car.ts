@@ -18,7 +18,7 @@ export class Car extends BaseEntity {
   private maxForceForward: number = 1000;
   private forceForward: number = 1000; // How fast it goes
   private forceBackward: number = 500; // How fast it goes
-  private brakeForce: number = 5; // How fast it breaks
+  private brakeForce: number = 5; // How fast it brakes
   private movementKeys = [
     'w',
     'a',
@@ -31,10 +31,8 @@ export class Car extends BaseEntity {
     'ArrowRight',
   ];
   private pressedKeys: string[] = [];
-  private lightBrakeLeft: RectLight;
-  private lightBrakeRight: RectLight;
-  private lightFrontLeft: RectLight;
-  private lightFrontRight: RectLight;
+  private lightBrakeLeft: THREE.Mesh | undefined;
+  private lightBrakeRight: THREE.Mesh | undefined;
   private surfaceDetectionBody: CANNON.Body;
 
   constructor(private engine: Engine) {
@@ -54,51 +52,17 @@ export class Car extends BaseEntity {
     this.wheels = this.instance.children
       .filter((child) => child.name.includes('wheel'))
       .sort((a, b) => parseInt(a.name) - parseInt(b.name));
+    this.lightBrakeLeft = this.instance.getObjectByName(
+      'lightBrakeLeft'
+    ) as THREE.Mesh;
+    this.lightBrakeRight = this.instance.getObjectByName(
+      'lightBrakeRight'
+    ) as THREE.Mesh;
     this.instance.position.set(0, 0.32, 0);
     this.engine.scene.add(this.instance);
     this.engine.scene.add(...this.wheels);
     eventService.emit(Events.SET_CAMERA_FOLLOW, this.instance);
     this.exhaust = new Exhaust(this.engine, this);
-    // this.addLights();
-  }
-
-  addLights(): void {
-    const frontLightProps = {
-      color: 0xffffff,
-      intensity: 1500,
-      width: 0.4,
-      height: 0.18,
-      displayHelper: false,
-      visible: false,
-    };
-    const brakeLightProps = {
-      color: 0xff0000,
-      intensity: 1,
-      width: 0.5,
-      height: 0.09,
-      displayHelper: true,
-      visible: false,
-    };
-    this.lightBrakeLeft = new RectLight(
-      this,
-      'lightBrakeLeft',
-      brakeLightProps
-    );
-    this.lightBrakeRight = new RectLight(
-      this,
-      'lightBrakeRight',
-      brakeLightProps
-    );
-    this.lightFrontLeft = new RectLight(
-      this,
-      'lightFrontLeft',
-      frontLightProps
-    );
-    this.lightFrontRight = new RectLight(
-      this,
-      'lightFrontRight',
-      frontLightProps
-    );
   }
 
   initPhysics(): void {
@@ -246,9 +210,11 @@ export class Car extends BaseEntity {
     this.vehicle.setSteeringValue(this.maxSteerVal * direction, 1);
   }
 
-  onBreak(brakeForce: number): void {
-    // this.lightBrakeLeft.toggleLight(brakeForce !== 0);
-    // this.lightBrakeRight.toggleLight(brakeForce !== 0);
+  onBrake(brakeForce: number): void {
+    (this.lightBrakeLeft?.material as THREE.MeshStandardMaterial).emissive.r =
+      brakeForce;
+    (this.lightBrakeRight?.material as THREE.MeshStandardMaterial).emissive.r =
+      brakeForce;
     this.vehicle.setBrake(brakeForce, 0);
     this.vehicle.setBrake(brakeForce, 1);
     this.vehicle.setBrake(brakeForce, 2);
@@ -277,7 +243,7 @@ export class Car extends BaseEntity {
       this.onSteer(-1);
     }
     if (this.pressedKeys.indexOf(' ') > -1) {
-      this.onBreak(this.brakeForce);
+      this.onBrake(this.brakeForce);
     }
   }
 
@@ -289,7 +255,7 @@ export class Car extends BaseEntity {
       this.onSteer(0);
     }
     if (eventKey === ' ') {
-      this.onBreak(0);
+      this.onBrake(0);
     }
   }
 

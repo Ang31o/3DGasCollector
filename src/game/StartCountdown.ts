@@ -38,7 +38,7 @@ export class StartCountdown extends BaseEntity {
     this.geometry = new TextGeometry(text, this.textGeometryParameters);
     this.geometry.center();
     this.material = new THREE.MeshMatcapMaterial({
-      matcap: this.engine.resources.getItem('matcap8'),
+      matcap: this.engine.resources.getItem('matcap5'),
     });
     this.material.transparent = true;
     this.instance = new THREE.Mesh(this.geometry, this.material);
