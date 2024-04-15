@@ -15,8 +15,8 @@ export class Map extends BaseEntity {
   public checkpoints: GasCheckpoint[] = [];
   public bumps: Bump[] = [];
   private sun!: THREE.DirectionalLight;
-  private lightStartLeft: THREE.Mesh | undefined;
-  private lightStartRight: THREE.Mesh | undefined;
+  private lightStartLeftMaterial: THREE.MeshStandardMaterial;
+  private lightStartRightMaterial: THREE.MeshStandardMaterial;
   private currentSurfaceMaterial: string | undefined = 'roadMaterial';
 
   constructor(private engine: Engine) {
@@ -42,18 +42,18 @@ export class Map extends BaseEntity {
         }
       }
     });
-    this.lightStartLeft = this.instance.getObjectByName(
+    const lighthStartLeft = this.instance.getObjectByName(
       'lightStartLeft'
     ) as THREE.Mesh;
-    this.lightStartRight = this.instance.getObjectByName(
+    this.lightStartLeftMaterial =
+      lighthStartLeft?.material as THREE.MeshStandardMaterial;
+    this.lightStartLeftMaterial.emissive.r = 1;
+    const lighthStartRight = this.instance.getObjectByName(
       'lightStartRight'
     ) as THREE.Mesh;
-    (
-      this.lightStartLeft?.material as THREE.MeshStandardMaterial
-    ).emissive.r = 1;
-    (
-      this.lightStartRight?.material as THREE.MeshStandardMaterial
-    ).emissive.r = 1;
+    this.lightStartRightMaterial =
+      lighthStartRight?.material as THREE.MeshStandardMaterial;
+    this.lightStartRightMaterial.emissive.r = 1;
     this.engine.scene.add(this.instance);
   }
 
@@ -148,27 +148,15 @@ export class Map extends BaseEntity {
   }
 
   onStartRace(): void {
-    (
-      this.lightStartLeft?.material as THREE.MeshStandardMaterial
-    ).emissive.r = 0;
-    (
-      this.lightStartRight?.material as THREE.MeshStandardMaterial
-    ).emissive.r = 0;
-    (
-      this.lightStartLeft?.material as THREE.MeshStandardMaterial
-    ).emissive.g = 1;
-    (
-      this.lightStartRight?.material as THREE.MeshStandardMaterial
-    ).emissive.g = 1;
+    this.lightStartLeftMaterial.emissive.r = 0;
+    this.lightStartRightMaterial.emissive.r = 0;
+    this.lightStartLeftMaterial.emissive.g = 1;
+    this.lightStartRightMaterial.emissive.g = 1;
   }
 
   onCheckpointPassed(): void {
-    (
-      this.lightStartLeft?.material as THREE.MeshStandardMaterial
-    ).emissive.g = 0;
-    (
-      this.lightStartRight?.material as THREE.MeshStandardMaterial
-    ).emissive.g = 0;
+    this.lightStartLeftMaterial.emissive.g = 0;
+    this.lightStartRightMaterial.emissive.g = 0;
   }
 
   onCollide(event: {

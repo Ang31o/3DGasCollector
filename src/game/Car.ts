@@ -31,8 +31,8 @@ export class Car extends BaseEntity {
     'ArrowRight',
   ];
   private pressedKeys: string[] = [];
-  private lightBrakeLeft: THREE.Mesh | undefined;
-  private lightBrakeRight: THREE.Mesh | undefined;
+  private lightBrakeLeftMaterial: THREE.MeshStandardMaterial;
+  private lightBrakeRightMaterial: THREE.MeshStandardMaterial;
   private surfaceDetectionBody: CANNON.Body;
 
   constructor(private engine: Engine) {
@@ -52,12 +52,17 @@ export class Car extends BaseEntity {
     this.wheels = this.instance.children
       .filter((child) => child.name.includes('wheel'))
       .sort((a, b) => parseInt(a.name) - parseInt(b.name));
-    this.lightBrakeLeft = this.instance.getObjectByName(
+    const lightBrakeLeft = this.instance.getObjectByName(
       'lightBrakeLeft'
     ) as THREE.Mesh;
-    this.lightBrakeRight = this.instance.getObjectByName(
+    this.lightBrakeLeftMaterial =
+      lightBrakeLeft?.material as THREE.MeshStandardMaterial;
+    const lightBrakeRight = this.instance.getObjectByName(
       'lightBrakeRight'
     ) as THREE.Mesh;
+    this.lightBrakeRightMaterial =
+      lightBrakeRight?.material as THREE.MeshStandardMaterial;
+
     this.instance.position.set(0, 0.32, 0);
     this.engine.scene.add(this.instance);
     this.engine.scene.add(...this.wheels);
@@ -211,10 +216,8 @@ export class Car extends BaseEntity {
   }
 
   onBrake(brakeForce: number): void {
-    (this.lightBrakeLeft?.material as THREE.MeshStandardMaterial).emissive.r =
-      brakeForce;
-    (this.lightBrakeRight?.material as THREE.MeshStandardMaterial).emissive.r =
-      brakeForce;
+    this.lightBrakeLeftMaterial.emissive.r = brakeForce;
+    this.lightBrakeRightMaterial.emissive.r = brakeForce;
     this.vehicle.setBrake(brakeForce, 0);
     this.vehicle.setBrake(brakeForce, 1);
     this.vehicle.setBrake(brakeForce, 2);
@@ -278,11 +281,6 @@ export class Car extends BaseEntity {
     document.addEventListener('keydown', (event) => {
       if (event.key === 'r') {
         this.resetToLastCheckpoint();
-        return;
-      }
-      if (event.key === 'l') {
-        // this.lightFrontLeft.toggleLight(!this.lightFrontLeft.isLightOn);
-        // this.lightFrontRight.toggleLight(!this.lightFrontRight.isLightOn);
         return;
       }
       if (
