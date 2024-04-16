@@ -5,13 +5,18 @@ import { BaseEntity } from '../engine/BaseEntity';
 import { Exhaust } from './exhaust/Exhaust';
 import eventService from '../engine/utilities/eventService';
 import { Events } from '../events';
-import { RectLight } from './RectLight';
 import { Constants } from '../constants';
 import { GameState } from './state/GameState';
+import { Wheels } from './Wheels';
 
 export class Car extends BaseEntity {
   public vehicle: CANNON.RaycastVehicle;
-  private wheels!: THREE.Object3D<THREE.Object3DEventMap>[];
+  public prop = {
+    carLength: 1.6,
+    carHeight: 0.5,
+    carWidth: 1.2,
+    wheelRadius: 0.3,
+  };
   private exhaust!: Exhaust;
   private maxSteerVal: number = 1; // How sharp it steers
   private minForceForward: number = 300;
@@ -19,17 +24,7 @@ export class Car extends BaseEntity {
   private forceForward: number = 1000; // How fast it goes
   private forceBackward: number = 500; // How fast it goes
   private brakeForce: number = 5; // How fast it brakes
-  private movementKeys = [
-    'w',
-    'a',
-    's',
-    'd',
-    ' ',
-    'ArrowUp',
-    'ArrowDown',
-    'ArrowLeft',
-    'ArrowRight',
-  ];
+  private movementKeys = ['w', 'a', 's', 'd', ' '];
   private pressedKeys: string[] = [];
   private lightBrakeLeftMaterial: THREE.MeshStandardMaterial;
   private lightBrakeRightMaterial: THREE.MeshStandardMaterial;
@@ -48,10 +43,6 @@ export class Car extends BaseEntity {
     this.instance.traverse((child) => {
       if (child.type === 'Mesh') child.castShadow = true;
     });
-    // Move wheels to a separate objects so they can be updated with world transform on "postStep" event
-    this.wheels = this.instance.children
-      .filter((child) => child.name.includes('wheel'))
-      .sort((a, b) => parseInt(a.name) - parseInt(b.name));
     const lightBrakeLeft = this.instance.getObjectByName(
       'lightBrakeLeft'
     ) as THREE.Mesh;
@@ -65,20 +56,18 @@ export class Car extends BaseEntity {
 
     this.instance.position.set(0, 0.32, 0);
     this.engine.scene.add(this.instance);
-    this.engine.scene.add(...this.wheels);
     eventService.emit(Events.SET_CAMERA_FOLLOW, this.instance);
     this.exhaust = new Exhaust(this.engine, this);
   }
 
   initPhysics(): void {
-    const carLength = 1.6;
-    const carHeight = 0.5;
-    const carWidth = 1.2;
-    const wheelRadius = 0.3;
-
     // ADD CAR
     const chassisShape = new CANNON.Box(
-      new CANNON.Vec3(carWidth, carHeight, carLength)
+      new CANNON.Vec3(
+        this.prop.carWidth,
+        this.prop.carHeight,
+        this.prop.carLength
+      )
     );
     this.body = new CANNON.Body({
       mass: 170,
@@ -97,7 +86,11 @@ export class Car extends BaseEntity {
       collisionResponse: false,
     });
     const surfaceDetectionShape = new CANNON.Box(
-      new CANNON.Vec3(carWidth, carHeight + 1, carLength)
+      new CANNON.Vec3(
+        this.prop.carWidth,
+        this.prop.carHeight + 1,
+        this.prop.carLength
+      )
     );
     this.surfaceDetectionBody.addShape(surfaceDetectionShape);
     this.engine.physics.world.addBody(this.surfaceDetectionBody);
@@ -109,89 +102,8 @@ export class Car extends BaseEntity {
       indexRightAxis: 0,
       indexUpAxis: 1,
     });
-
-    const wheelOptions = {
-      radius: wheelRadius,
-      directionLocal: new CANNON.Vec3(0, -1, 0), // Direction of down
-      suspensionStiffness: 30, // How soft the suspension is
-      suspensionRestLength: 0.7, // Suspension height
-      maxSuspensionTravel: 0.6, // maxSuspensionTravel can never be more than suspensionRestLength
-      frictionSlip: 2,
-      dampingRelaxation: 8,
-      dampingCompression: 10,
-      maxSuspensionForce: 100000,
-      axleLocal: new CANNON.Vec3(1, 0, 0), // Axle on this car goes on the X axis
-      chassisConnectionPointLocal: new CANNON.Vec3(0, 0, 0), // Dummy value, will be set for each of the wheel we apply
-      customSlidingRotationalSpeed: -30,
-      useCustomSlidingRotationalSpeed: true,
-    };
-
-    // ADDING WHEELS
-    wheelOptions.chassisConnectionPointLocal.set(-carWidth, 0, 1.1); // Top right wheel
-    this.vehicle.addWheel(wheelOptions);
-    wheelOptions.chassisConnectionPointLocal.set(carWidth, 0, 1.1); // Top left wheel
-    this.vehicle.addWheel(wheelOptions);
-    wheelOptions.chassisConnectionPointLocal.set(-carWidth, 0, -1.2); // Bottom right wheel
-    this.vehicle.addWheel(wheelOptions);
-    wheelOptions.chassisConnectionPointLocal.set(carWidth, 0, -1.2); // Bottom left wheel
-    this.vehicle.addWheel(wheelOptions);
-
+    new Wheels(this.engine, this);
     this.vehicle.addToWorld(this.engine.physics.world);
-
-    // const carGui = this.engine.debug.gui.addFolder('Car');
-    // for (const key in wheelOptions) {
-    //   if (typeof wheelOptions[key] === 'number') {
-    //     carGui
-    //       .add(wheelOptions, `${key}`, 0, wheelOptions[key] * 10)
-    //       .onChange((value) =>
-    //         this.vehicle.wheelInfos.forEach((wheel) => (wheel[key] = value))
-    //       );
-    //   }
-    // }
-
-    const wheelBodies = [] as CANNON.Body[];
-    this.vehicle.wheelInfos.forEach((wheel) => {
-      const cylinderShape = new CANNON.Cylinder(
-        wheel.radius,
-        wheel.radius,
-        wheel.radius / 2,
-        20
-      );
-      const wheelBody = new CANNON.Body({
-        mass: 1,
-        material: new CANNON.Material('wheelMaterial'),
-        type: CANNON.Body.KINEMATIC,
-        collisionFilterGroup: 0, // turn off collisions
-      });
-      wheelBody.addShape(
-        cylinderShape,
-        new CANNON.Vec3(),
-        new CANNON.Quaternion().setFromEuler(0, 0, Math.PI / 2)
-      );
-      wheelBodies.push(wheelBody);
-      this.engine.physics.world.addBody(wheelBody);
-    });
-
-    // UPDATE WHEELS
-    this.engine.physics.world.addEventListener('postStep', () => {
-      this.vehicle.wheelInfos.forEach((wheel, wheelIndex) => {
-        this.vehicle.updateWheelTransform(wheelIndex);
-        const transform = wheel.worldTransform;
-        wheelBodies[wheelIndex].position.copy(transform.position);
-        wheelBodies[wheelIndex].quaternion.copy(transform.quaternion);
-        this.wheels[wheelIndex]?.position.set(
-          transform.position.x,
-          transform.position.y,
-          transform.position.z
-        );
-        this.wheels[wheelIndex]?.quaternion.set(
-          transform.quaternion.x,
-          transform.quaternion.y,
-          transform.quaternion.z,
-          transform.quaternion.w
-        );
-      });
-    });
   }
 
   onForward(forceValue: number): void {
