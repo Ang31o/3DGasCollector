@@ -18,8 +18,6 @@ nvm use node
 
 Replace 'node' with 'latest' for `nvm-windows`.
 
-> For full experience clone and run the [SunriseMarioAPI](https://github.com/Ang31o/SunriseMarioAPI) server to record your score and see the high-score table.
-
 ## Getting Started
 
 Start development server:
